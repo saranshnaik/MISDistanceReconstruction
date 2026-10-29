@@ -10,5 +10,6 @@ public record CleaningReport(
         int invalidCoordinates,
         int lowAccuracy,
         int duplicates,
+        int teleports,
         int kept) {
 }

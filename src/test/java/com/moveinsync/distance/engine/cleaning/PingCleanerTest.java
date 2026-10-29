@@ -30,7 +30,7 @@ class PingCleanerTest {
     @Test
     void sortsOutOfOrderPings() {
         CleanedPings result = clean(List.of(
-                ping(30, 12.93, 77.61, 10), ping(10, 12.91, 77.61, 10), ping(20, 12.92, 77.61, 10)));
+                ping(30, 12.9003, 77.61, 10), ping(10, 12.9001, 77.61, 10), ping(20, 12.9002, 77.61, 10)));
 
         assertEquals(List.of(START.plusSeconds(10), START.plusSeconds(20), START.plusSeconds(30)),
                 result.pings().stream().map(Ping::time).toList());
@@ -92,12 +92,12 @@ class PingCleanerTest {
     void everyReceivedPingIsAccountedFor() {
         CleanedPings result = clean(List.of(
                 ping(-5, 12.90, 77.61, 10), ping(10, 0, 0, 10), ping(20, 12.92, 77.61, 99),
-                ping(30, 12.93, 77.61, 10), ping(30, 12.93, 77.61, 10), ping(40, 12.94, 77.61, 10)));
+                ping(30, 12.9003, 77.61, 10), ping(30, 12.9003, 77.61, 10), ping(40, 12.9004, 77.61, 10)));
 
         CleaningReport r = result.report();
         assertEquals(6, r.received());
         assertEquals(r.received(),
-                r.outsideTripWindow() + r.invalidCoordinates() + r.lowAccuracy() + r.duplicates() + r.kept());
+                r.outsideTripWindow() + r.invalidCoordinates() + r.lowAccuracy() + r.duplicates() + r.teleports() + r.kept());
     }
 
     @Test
