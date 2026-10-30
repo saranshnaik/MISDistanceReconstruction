@@ -54,6 +54,15 @@ public class CircuitBreaker {
         return true;
     }
 
+    /**
+     * True while the circuit is open and its wait is not over yet. Unlike allowRequest() this
+     * only looks: it never lets a probe through. Handy for background work that should simply
+     * stay quiet until the provider has had time to recover.
+     */
+    public synchronized boolean isRefusingRequests() {
+        return state == State.OPEN && clock.instant().isBefore(openedAt.plus(openFor));
+    }
+
     public synchronized void recordSuccess() {
         state = State.CLOSED;
         consecutiveFailures = 0;

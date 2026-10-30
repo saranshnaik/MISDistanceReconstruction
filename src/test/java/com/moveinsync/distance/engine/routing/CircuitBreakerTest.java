@@ -133,4 +133,16 @@ class CircuitBreakerTest {
         pool.shutdown();
         assertEquals(1, allowed);
     }
+
+    @Test
+    void isRefusingRequestsOnlyWhileOpenAndWaitingAndNeverStartsAProbe() {
+        assertFalse(breaker.isRefusingRequests());
+        fail(5);
+        assertTrue(breaker.isRefusingRequests());
+
+        clock.advance(Duration.ofSeconds(30));
+        assertFalse(breaker.isRefusingRequests());
+        assertEquals(State.OPEN, breaker.state());   // looking did not move it to HALF_OPEN
+        assertTrue(breaker.allowRequest());           // so the probe is still available
+    }
 }
