@@ -37,6 +37,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        ProblemJsonSecurityHandlers problemJson = new ProblemJsonSecurityHandlers();
         http
                 .csrf(csrf -> csrf.disable()) // no cookies are used, so there is nothing for CSRF to ride on
                 .sessionManagement(sessions -> sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -55,7 +56,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // anything not listed above is closed until someone decides who may use it
                         .anyRequest().denyAll())
-                .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(authoritiesFromRole())));
+                .exceptionHandling(errors -> errors
+                        .authenticationEntryPoint(problemJson)
+                        .accessDeniedHandler(problemJson))
+                .oauth2ResourceServer(oauth -> oauth
+                        .authenticationEntryPoint(problemJson)
+                        .accessDeniedHandler(problemJson)
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(authoritiesFromRole())));
         return http.build();
     }
 

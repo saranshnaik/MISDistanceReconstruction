@@ -5,12 +5,10 @@ import com.moveinsync.distance.persistence.AppUserRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Exchange a username and password for a signed token. */
@@ -52,12 +50,5 @@ public class AuthController {
         }
         JwtService.IssuedToken token = jwtService.issue(user);
         return new TokenResponse(token.value(), "Bearer", token.expiresInSeconds(), user.getRole().name());
-    }
-
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    static class InvalidCredentialsException extends RuntimeException {
-        InvalidCredentialsException() {
-            super("invalid credentials");
-        }
     }
 }
