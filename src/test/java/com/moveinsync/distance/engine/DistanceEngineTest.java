@@ -16,7 +16,9 @@ import com.moveinsync.distance.engine.model.SegmentRule;
 import com.moveinsync.distance.engine.model.StopEvent;
 import com.moveinsync.distance.engine.model.TripEvidence;
 import com.moveinsync.distance.engine.model.TripType;
+import com.moveinsync.distance.engine.routing.CachingRouteResolver;
 import com.moveinsync.distance.engine.routing.RoutingProvider;
+import com.moveinsync.distance.engine.routing.SimulatedRoutingProvider;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -219,5 +221,65 @@ class DistanceEngineTest {
         DistanceEngine engine = new DistanceEngine(RuleConfig.defaults(), new StubRouting());
 
         assertEquals(engine.ruleVersion(), engine.compute(underpassTrip()).ruleVersion());
+    }
+
+    // ---- routing cost per trip ----
+
+    @Test
+    void withoutACacheEveryGapIsOneProviderCall() {
+        TripDistanceResult result = new DistanceEngine(RuleConfig.defaults(), new StubRouting())
+                .compute(underpassTrip());
+
+        assertEquals(new RoutingUsage(3, 3, 0), result.routing());
+    }
+
+    @Test
+    void tripWithoutRealGapsReportsNoRoutingAtAll() {
+        TripDistanceResult result = new DistanceEngine(RuleConfig.defaults(), new StubRouting())
+                .compute(trip(pings(0, TRIP_SECONDS), List.of()));
+
+        assertEquals(new RoutingUsage(0, 0, 0), result.routing());
+    }
+
+    @Test
+    void cachedEngineSendsTheThreeGapsInOneBatchThenNeedsNothing() {
+        SimulatedRoutingProvider provider = new SimulatedRoutingProvider();
+        DistanceEngine engine = new DistanceEngine(RuleConfig.defaults(), new CachingRouteResolver(provider));
+
+        TripDistanceResult cold = engine.compute(underpassTrip());
+        TripDistanceResult warm = engine.compute(underpassTrip());
+
+        assertEquals(new RoutingUsage(3, 1, 0), cold.routing());
+        assertEquals(new RoutingUsage(3, 0, 3), warm.routing());
+        assertEquals(1, provider.callCount());
+    }
+
+    @Test
+    void cacheChangesTheCostButNeverTheKilometres() {
+        DistanceEngine engine = new DistanceEngine(RuleConfig.defaults(),
+                new CachingRouteResolver(new SimulatedRoutingProvider()));
+
+        TripDistanceResult cold = engine.compute(underpassTrip());
+        TripDistanceResult warm = engine.compute(underpassTrip());
+
+        assertEquals(cold.segments(), warm.segments());
+        assertEquals(cold.totalMm(), warm.totalMm());
+        assertEquals(cold.billableKm(), warm.billableKm());
+    }
+
+    @Test
+    void twentyIdenticalCommutesCost60CallsWithoutCachingAndOneWithIt() {
+        SimulatedRoutingProvider uncachedProvider = new SimulatedRoutingProvider();
+        DistanceEngine uncached = new DistanceEngine(RuleConfig.defaults(), uncachedProvider);
+        SimulatedRoutingProvider cachedProvider = new SimulatedRoutingProvider();
+        DistanceEngine cached = new DistanceEngine(RuleConfig.defaults(), new CachingRouteResolver(cachedProvider));
+
+        for (int i = 0; i < 20; i++) {
+            uncached.compute(underpassTrip());
+            cached.compute(underpassTrip());
+        }
+
+        assertEquals(60, uncachedProvider.callCount());
+        assertEquals(1, cachedProvider.callCount());
     }
 }

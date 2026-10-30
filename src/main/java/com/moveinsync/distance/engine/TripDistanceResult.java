@@ -13,6 +13,9 @@ import java.util.List;
  * @param naiveKm         what a plain "add up the distance between pings" would have said,
  *                        so the effect of the gap filling is visible
  * @param skippedAnchors  milestones that had no usable location or time
+ * @param routing         routing requests / provider calls / cache hits for this run. This is
+ *                        about cost, not about the answer: the same trip costs less on a warm
+ *                        cache but its segments and kilometres stay exactly the same.
  * @param ruleVersion     which rules and thresholds produced this
  */
 public record TripDistanceResult(
@@ -22,5 +25,6 @@ public record TripDistanceResult(
         BigDecimal naiveKm,
         CleaningReport cleaning,
         int skippedAnchors,
+        RoutingUsage routing,
         String ruleVersion) {
 }

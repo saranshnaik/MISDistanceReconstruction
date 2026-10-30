@@ -12,12 +12,17 @@ import com.moveinsync.distance.engine.model.RuleConfig;
 import com.moveinsync.distance.engine.model.Segment;
 import com.moveinsync.distance.engine.model.TrackPoint;
 import com.moveinsync.distance.engine.model.TripEvidence;
+import com.moveinsync.distance.engine.routing.DirectRouteResolver;
+import com.moveinsync.distance.engine.routing.RoutePair;
+import com.moveinsync.distance.engine.routing.RouteResolution;
+import com.moveinsync.distance.engine.routing.RouteResolver;
 import com.moveinsync.distance.engine.routing.RoutingProvider;
 import com.moveinsync.distance.engine.rules.ParkedRule;
 import com.moveinsync.distance.engine.rules.RoutedDistancePolicy;
 import com.moveinsync.distance.engine.rules.SegmentDistanceRule;
 import com.moveinsync.distance.engine.rules.ShortGapAerialRule;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -28,12 +33,14 @@ import java.util.Optional;
  *  1. clean the pings
  *  2. build the anchors
  *  3. merge both into one time-ordered track
- *  4. price every pair of neighbouring points: ShortGapAerial, then Parked, otherwise ask the
- *     routing provider and let RoutedDistancePolicy accept or reject the answer
- *  5. add up the billed millimetres and round to km once
+ *  4. price every pair of neighbouring points with the cheap rules (ShortGapAerial, then
+ *     Parked). Whatever is left is a real gap.
+ *  5. ask the RouteResolver for ALL the real gaps of the trip in one go, so it can dedupe,
+ *     cache and batch, then let RoutedDistancePolicy accept or reject each answer
+ *  6. add up the billed millimetres and round to km once
  *
  * Plain Java, no Spring or database. The same TripEvidence and the same RuleConfig always give
- * the same result; the only outside input is the RoutingProvider.
+ * the same segments and kilometres; the only outside input is the routing provider.
  */
 public class DistanceEngine {
 
@@ -51,16 +58,21 @@ public class DistanceEngine {
     /** Cheap rules, tried in this order. The order is part of the rule version. */
     private final List<SegmentDistanceRule> cheapRules;
     private final RoutedDistancePolicy routedPolicy;
-    private final RoutingProvider routingProvider;
+    private final RouteResolver routeResolver;
     private final String ruleVersion;
 
+    /** One provider call per gap, no cache. Handy for tests and as the "before" baseline. */
     public DistanceEngine(RuleConfig config, RoutingProvider routingProvider) {
+        this(config, new DirectRouteResolver(routingProvider));
+    }
+
+    public DistanceEngine(RuleConfig config, RouteResolver routeResolver) {
         this.config = config;
         this.cleaner = new PingCleaner(config);
         this.anchorBuilder = new AnchorBuilder(config);
         this.cheapRules = List.of(new ShortGapAerialRule(config), new ParkedRule(config));
         this.routedPolicy = new RoutedDistancePolicy(config);
-        this.routingProvider = routingProvider;
+        this.routeResolver = routeResolver;
         this.ruleVersion = RuleVersion.of(config);
     }
 
@@ -73,33 +85,54 @@ public class DistanceEngine {
         track.addAll(anchors.anchors());
         track.sort(TRACK_ORDER);
 
-        List<Segment> segments = new ArrayList<>(Math.max(0, track.size() - 1));
+        // segment i is the stretch between track[i] and track[i + 1]
+        Segment[] segments = new Segment[Math.max(0, track.size() - 1)];
+        List<Integer> needsRoute = new ArrayList<>();
+        List<RoutePair> questions = new ArrayList<>();
+        for (int i = 0; i < segments.length; i++) {
+            Optional<Segment> cheap = priceWithCheapRules(track.get(i), track.get(i + 1));
+            if (cheap.isPresent()) {
+                segments[i] = cheap.get();
+            } else {
+                needsRoute.add(i);
+                questions.add(new RoutePair(track.get(i).point(), track.get(i + 1).point()));
+            }
+        }
+
+        RoutingUsage usage = new RoutingUsage(questions.size(), 0, 0);
+        if (!questions.isEmpty()) {
+            RouteResolution resolution = routeResolver.resolve(questions);
+            for (int k = 0; k < needsRoute.size(); k++) {
+                int i = needsRoute.get(k);
+                segments[i] = routedPolicy.judge(track.get(i), track.get(i + 1), resolution.meters().get(k));
+            }
+            usage = new RoutingUsage(questions.size(), resolution.providerCalls(), resolution.cacheHits());
+        }
+
         long totalMm = 0;
-        for (int i = 1; i < track.size(); i++) {
-            Segment segment = price(track.get(i - 1), track.get(i));
-            segments.add(segment);
+        for (Segment segment : segments) {
             totalMm += segment.billedMm();
         }
 
         return new TripDistanceResult(
-                segments,
+                List.copyOf(Arrays.asList(segments)),
                 totalMm,
                 Millimetres.toKm(totalMm),
                 Millimetres.toKm(naiveMm(pingPoints)),
                 cleaned.report(),
                 anchors.skipped(),
+                usage,
                 ruleVersion);
     }
 
-    private Segment price(TrackPoint from, TrackPoint to) {
+    private Optional<Segment> priceWithCheapRules(TrackPoint from, TrackPoint to) {
         for (SegmentDistanceRule rule : cheapRules) {
             Optional<Segment> segment = rule.apply(from, to);
             if (segment.isPresent()) {
-                return segment.get();
+                return segment;
             }
         }
-        double routedMeters = routingProvider.drivingDistanceM(from.point(), to.point());
-        return routedPolicy.judge(from, to, routedMeters);
+        return Optional.empty();
     }
 
     private static List<TrackPoint> toTrackPoints(List<Ping> pings) {
