@@ -16,6 +16,7 @@ import java.util.List;
  * @param routing         routing requests / provider calls / cache hits for this run. This is
  *                        about cost, not about the answer: the same trip costs less on a warm
  *                        cache but its segments and kilometres stay exactly the same.
+ * @param status          DEGRADED if routing was down and some gaps are only estimates
  * @param ruleVersion     which rules and thresholds produced this
  */
 public record TripDistanceResult(
@@ -26,5 +27,6 @@ public record TripDistanceResult(
         CleaningReport cleaning,
         int skippedAnchors,
         RoutingUsage routing,
+        TripStatus status,
         String ruleVersion) {
 }

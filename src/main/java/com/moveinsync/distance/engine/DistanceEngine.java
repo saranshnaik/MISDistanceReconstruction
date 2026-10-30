@@ -17,6 +17,7 @@ import com.moveinsync.distance.engine.routing.RoutePair;
 import com.moveinsync.distance.engine.routing.RouteResolution;
 import com.moveinsync.distance.engine.routing.RouteResolver;
 import com.moveinsync.distance.engine.routing.RoutingProvider;
+import com.moveinsync.distance.engine.routing.RoutingUnavailableException;
 import com.moveinsync.distance.engine.rules.ParkedRule;
 import com.moveinsync.distance.engine.rules.RoutedDistancePolicy;
 import com.moveinsync.distance.engine.rules.SegmentDistanceRule;
@@ -36,7 +37,8 @@ import java.util.Optional;
  *  4. price every pair of neighbouring points with the cheap rules (ShortGapAerial, then
  *     Parked). Whatever is left is a real gap.
  *  5. ask the RouteResolver for ALL the real gaps of the trip in one go, so it can dedupe,
- *     cache and batch, then let RoutedDistancePolicy accept or reject each answer
+ *     cache and batch, then let RoutedDistancePolicy accept or reject each answer.
+ *     If routing is unavailable the gaps are estimated and the trip is marked DEGRADED.
  *  6. add up the billed millimetres and round to km once
  *
  * Plain Java, no Spring or database. The same TripEvidence and the same RuleConfig always give
@@ -100,13 +102,22 @@ public class DistanceEngine {
         }
 
         RoutingUsage usage = new RoutingUsage(questions.size(), 0, 0);
+        TripStatus status = TripStatus.OK;
         if (!questions.isEmpty()) {
-            RouteResolution resolution = routeResolver.resolve(questions);
-            for (int k = 0; k < needsRoute.size(); k++) {
-                int i = needsRoute.get(k);
-                segments[i] = routedPolicy.judge(track.get(i), track.get(i + 1), resolution.meters().get(k));
+            try {
+                RouteResolution resolution = routeResolver.resolve(questions);
+                for (int k = 0; k < needsRoute.size(); k++) {
+                    int i = needsRoute.get(k);
+                    segments[i] = routedPolicy.judge(track.get(i), track.get(i + 1), resolution.meters().get(k));
+                }
+                usage = new RoutingUsage(questions.size(), resolution.providerCalls(), resolution.cacheHits());
+            } catch (RoutingUnavailableException e) {
+                // Provider down (or circuit open): estimate the real gaps and flag the trip.
+                status = TripStatus.DEGRADED;
+                for (int i : needsRoute) {
+                    segments[i] = routedPolicy.degradedEstimate(track.get(i), track.get(i + 1));
+                }
             }
-            usage = new RoutingUsage(questions.size(), resolution.providerCalls(), resolution.cacheHits());
         }
 
         long totalMm = 0;
@@ -122,6 +133,7 @@ public class DistanceEngine {
                 cleaned.report(),
                 anchors.skipped(),
                 usage,
+                status,
                 ruleVersion);
     }
 

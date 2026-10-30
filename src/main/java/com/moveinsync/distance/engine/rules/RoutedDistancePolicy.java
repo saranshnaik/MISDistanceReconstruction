@@ -45,4 +45,18 @@ public class RoutedDistancePolicy {
 
         return new Segment(from, to, durationMs, aerialMm, routedMm, routedMm, SegmentRule.ROUTED);
     }
+
+    /**
+     * Used when the routing provider is down: straight line x 1.4 (a typical detour factor).
+     * It is only an estimate, so the trip is marked DEGRADED and gets recomputed later; this
+     * method does not try to reject anything, because without a route there is nothing to
+     * compare with.
+     */
+    public Segment degradedEstimate(TrackPoint from, TrackPoint to) {
+        long durationMs = Duration.between(from.time(), to.time()).toMillis();
+        double aerialMeters = Haversine.distanceM(from.point(), to.point());
+        long estimateMm = Millimetres.fromMeters(aerialMeters * config.detourFactor());
+        return new Segment(from, to, durationMs, Millimetres.fromMeters(aerialMeters), null,
+                estimateMm, SegmentRule.DEGRADED_ESTIMATE);
+    }
 }
