@@ -1,5 +1,29 @@
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: distance
+      POSTGRES_USER: distance
+      POSTGRES_PASSWORD: distance
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U distance -d distance"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
   app:
     build: .
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/distance
+      DB_USER: distance
+      DB_PASSWORD: distance
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  dbdata:
