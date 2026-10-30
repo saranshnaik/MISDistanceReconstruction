@@ -57,6 +57,13 @@ class AuthenticationTest {
         return json.readTree(body).get("accessToken").asString();
     }
 
+    private String withoutTraceId(String problemJson) {
+        return json.readTree(problemJson).propertyNames().stream()
+                .filter(name -> !name.equals("traceId"))
+                .map(name -> name + "=" + json.readTree(problemJson).get(name))
+                .sorted().toList().toString();
+    }
+
     private ResultActions callProtected(String authorizationHeader) throws Exception {
         var request = get("/api/trips/anything");
         if (authorizationHeader != null) {
@@ -84,7 +91,8 @@ class AuthenticationTest {
         String unknownUser = login("nobody-here", "nope").andExpect(status().isUnauthorized())
                 .andReturn().getResponse().getContentAsString();
 
-        assertEquals(wrongPassword, unknownUser); // nothing reveals which usernames exist
+        // identical apart from the per-request trace id: nothing reveals which usernames exist
+        assertEquals(withoutTraceId(wrongPassword), withoutTraceId(unknownUser));
     }
 
     @Test
