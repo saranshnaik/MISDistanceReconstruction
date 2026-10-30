@@ -2,6 +2,8 @@ package com.moveinsync.distance.engine.routing;
 
 import com.moveinsync.distance.engine.geo.Haversine;
 import com.moveinsync.distance.engine.model.GeoPoint;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -13,9 +15,10 @@ import java.util.concurrent.atomic.AtomicLong;
  * factor between 1.25 and 1.45. The factor comes from the coordinates themselves, which means
  * the same two points always give the same answer, on any run.
  *
- * It behaves like the real thing in the ways that matter here: every call is counted (calls
- * cost money), it can be slow, and it can be switched off to simulate an outage.
- * A real provider (OSRM, Google...) would implement the same RoutingProvider interface.
+ * It behaves like the real thing in the ways that matter here: every request is counted (calls
+ * cost money), it can be slow, and it can be switched off to simulate an outage. A batch of
+ * pairs is ONE request, like a distance-matrix endpoint. A real provider (OSRM, Google...)
+ * would implement the same RoutingProvider interface.
  */
 public class SimulatedRoutingProvider implements RoutingProvider {
 
@@ -36,6 +39,11 @@ public class SimulatedRoutingProvider implements RoutingProvider {
 
     @Override
     public double drivingDistanceM(GeoPoint from, GeoPoint to) {
+        return drivingDistancesM(List.of(new RoutePair(from, to))).get(0);
+    }
+
+    @Override
+    public List<Double> drivingDistancesM(List<RoutePair> pairs) {
         calls.incrementAndGet();
         if (latencyMs > 0) {
             sleep(latencyMs);
@@ -43,7 +51,11 @@ public class SimulatedRoutingProvider implements RoutingProvider {
         if (down.get()) {
             throw new RoutingUnavailableException("routing provider is not responding");
         }
-        return Haversine.distanceM(from, to) * detourFactor(from, to);
+        List<Double> answers = new ArrayList<>(pairs.size());
+        for (RoutePair pair : pairs) {
+            answers.add(Haversine.distanceM(pair.from(), pair.to()) * detourFactor(pair.from(), pair.to()));
+        }
+        return answers;
     }
 
     /** Pretend the provider is (or is no longer) down. */
@@ -55,7 +67,7 @@ public class SimulatedRoutingProvider implements RoutingProvider {
         return down.get();
     }
 
-    /** Every attempt counts, including the ones that failed: that is how real APIs bill. */
+    /** Every request counts, including the ones that failed: that is how real APIs bill. */
     public long callCount() {
         return calls.get();
     }

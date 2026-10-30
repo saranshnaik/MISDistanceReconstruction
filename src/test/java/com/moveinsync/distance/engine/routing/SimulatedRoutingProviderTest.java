@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.moveinsync.distance.engine.geo.Haversine;
 import com.moveinsync.distance.engine.model.GeoPoint;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class SimulatedRoutingProviderTest {
@@ -70,5 +71,29 @@ class SimulatedRoutingProviderTest {
         long elapsedMs = (System.nanoTime() - before) / 1_000_000;
 
         assertTrue(elapsedMs >= 25, "took only " + elapsedMs + " ms");
+    }
+
+    @Test
+    void aWholeBatchIsOneRequestAndKeepsTheOrder() {
+        SimulatedRoutingProvider provider = new SimulatedRoutingProvider();
+        List<RoutePair> pairs = List.of(new RoutePair(A, B), new RoutePair(B, A), new RoutePair(A, B));
+
+        List<Double> answers = provider.drivingDistancesM(pairs);
+
+        assertEquals(1, provider.callCount());
+        assertEquals(3, answers.size());
+        assertEquals(provider.drivingDistanceM(A, B), answers.get(0));
+        assertEquals(provider.drivingDistanceM(B, A), answers.get(1));
+        assertEquals(answers.get(0), answers.get(2));
+    }
+
+    @Test
+    void aBatchFailsAsAWholeWhenDown() {
+        SimulatedRoutingProvider provider = new SimulatedRoutingProvider();
+        provider.setDown(true);
+
+        assertThrows(RoutingUnavailableException.class,
+                () -> provider.drivingDistancesM(List.of(new RoutePair(A, B))));
+        assertEquals(1, provider.callCount());
     }
 }
