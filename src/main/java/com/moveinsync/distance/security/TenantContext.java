@@ -7,4 +7,9 @@ package com.moveinsync.distance.security;
 public interface TenantContext {
 
     String currentTenantId();
+
+    Role currentRole();
+
+    /** For EMPLOYEE accounts: which employee this login is. Null for other roles. */
+    String currentEmployeeRef();
 }

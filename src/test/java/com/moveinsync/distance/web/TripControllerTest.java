@@ -84,9 +84,22 @@ class TripControllerTest {
         return p;
     }
 
+    private String token;
+
+    /** Logs in as the demo operator of tenant "acme" (once per test). */
+    private String bearer() throws Exception {
+        if (token == null) {
+            String response = mvc.perform(post("/api/auth/token").contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"username\":\"acme-operator\",\"password\":\"demo-pass\"}"))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            token = json.readTree(response).get("accessToken").asString();
+        }
+        return "Bearer " + token;
+    }
+
     private ResultActions submit(Map<String, Object> body) throws Exception {
-        return mvc.perform(post("/api/trips").contentType(MediaType.APPLICATION_JSON)
-                .content(json.writeValueAsString(body)));
+        return mvc.perform(post("/api/trips").header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body)));
     }
 
     private static String newRef() {
@@ -119,7 +132,7 @@ class TripControllerTest {
         String ref = newRef();
         submit(validRequest(ref)).andExpect(status().isOk());
 
-        mvc.perform(get("/api/trips/" + ref))
+        mvc.perform(get("/api/trips/" + ref).header("Authorization", bearer()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tripRef").value(ref))
                 .andExpect(jsonPath("$.tripType").value("LOGOUT"));
@@ -130,7 +143,7 @@ class TripControllerTest {
         String ref = newRef();
         submit(validRequest(ref)).andExpect(status().isOk());
 
-        mvc.perform(get("/api/trips/" + ref + "/segments"))
+        mvc.perform(get("/api/trips/" + ref + "/segments").header("Authorization", bearer()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].rule", hasItem("ROUTED")))
                 .andExpect(jsonPath("$[*].rule", hasItem("SHORT_GAP_AERIAL")))
@@ -142,7 +155,7 @@ class TripControllerTest {
         String ref = newRef();
         String first = submit(validRequest(ref)).andReturn().getResponse().getContentAsString();
 
-        String again = mvc.perform(post("/api/trips/" + ref + "/recompute"))
+        String again = mvc.perform(post("/api/trips/" + ref + "/recompute").header("Authorization", bearer()))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
         assertEquals(
@@ -151,11 +164,11 @@ class TripControllerTest {
 
     @Test
     void unknownTripIsA404WithNothingInTheBody() throws Exception {
-        mvc.perform(get("/api/trips/does-not-exist"))
+        mvc.perform(get("/api/trips/does-not-exist").header("Authorization", bearer()))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string(not(containsString("does-not-exist"))));
-        mvc.perform(get("/api/trips/does-not-exist/segments")).andExpect(status().isNotFound());
-        mvc.perform(post("/api/trips/does-not-exist/recompute")).andExpect(status().isNotFound());
+        mvc.perform(get("/api/trips/does-not-exist/segments").header("Authorization", bearer())).andExpect(status().isNotFound());
+        mvc.perform(post("/api/trips/does-not-exist/recompute").header("Authorization", bearer())).andExpect(status().isNotFound());
     }
 
     @Test
@@ -202,7 +215,8 @@ class TripControllerTest {
 
     @Test
     void malformedJsonIsA400() throws Exception {
-        mvc.perform(post("/api/trips").contentType(MediaType.APPLICATION_JSON).content("{not json"))
+        mvc.perform(post("/api/trips").header("Authorization", bearer())
+                        .contentType(MediaType.APPLICATION_JSON).content("{not json"))
                 .andExpect(status().isBadRequest());
     }
 }
