@@ -7,6 +7,8 @@ import com.moveinsync.distance.engine.model.EmployeeStop;
 import com.moveinsync.distance.engine.model.Ping;
 import com.moveinsync.distance.engine.model.Segment;
 import com.moveinsync.distance.engine.model.TripEvidence;
+import com.moveinsync.distance.persistence.BillingAdjustmentEntity;
+import com.moveinsync.distance.persistence.BillingAdjustmentRepository;
 import com.moveinsync.distance.persistence.DistanceComputationEntity;
 import com.moveinsync.distance.persistence.DistanceComputationRepository;
 import com.moveinsync.distance.persistence.DistanceState;
@@ -17,6 +19,7 @@ import com.moveinsync.distance.persistence.TripRepository;
 import com.moveinsync.distance.persistence.TripStopEntity;
 import com.moveinsync.distance.persistence.TripStopRepository;
 import java.time.Clock;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -48,18 +51,21 @@ public class TripService {
     private final TripStopRepository stops;
     private final PingRepository pings;
     private final DistanceComputationRepository computations;
+    private final BillingAdjustmentRepository adjustments;
     private final DistanceEngine engine;
     private final JsonMapper json;
     private final Clock clock;
     private final TransactionTemplate tx;
 
     public TripService(TripRepository trips, TripStopRepository stops, PingRepository pings,
-                       DistanceComputationRepository computations, DistanceEngine engine,
+                       DistanceComputationRepository computations,
+                       BillingAdjustmentRepository adjustments, DistanceEngine engine,
                        JsonMapper json, Clock clock, PlatformTransactionManager transactionManager) {
         this.trips = trips;
         this.stops = stops;
         this.pings = pings;
         this.computations = computations;
+        this.adjustments = adjustments;
         this.engine = engine;
         this.json = json;
         this.clock = clock;
@@ -80,29 +86,69 @@ public class TripService {
     public TripView compute(String tenantId, String tripRef) {
         return tx.execute(status -> {
             TripEntity trip = trips.findForUpdate(tenantId, tripRef).orElseThrow(TripNotFoundException::new);
-            TripEvidence evidence = loadEvidence(trip);
-            String inputHash = InputHasher.hash(evidence);
-
-            DistanceComputationEntity latest = computations.findFirstByTripIdOrderByIdDesc(trip.getId()).orElse(null);
-            if (latest != null && isStillValid(latest, inputHash)) {
-                return TripView.of(trip, latest);
-            }
-
-            TripDistanceResult result = engine.compute(evidence);
-            DistanceComputationEntity saved = computations.save(toEntity(trip, inputHash, result));
-            trip.useComputation(saved.getId(),
-                    result.status() == TripStatus.OK ? DistanceState.OK : DistanceState.DEGRADED);
-            trips.save(trip);
-            return TripView.of(trip, saved);
+            return computeLocked(trip, "recomputed");
         });
+    }
+
+    /**
+     * The computation itself, for callers that already hold the trip's row lock.
+     *
+     * If the trip is already billed and this run gives a real (non-degraded) answer that differs
+     * from what has been billed so far, the difference is stored as a signed adjustment. The
+     * closed invoice itself is never edited.
+     */
+    TripView computeLocked(TripEntity trip, String reason) {
+        TripEvidence evidence = loadEvidence(trip);
+        String inputHash = InputHasher.hash(evidence);
+
+        DistanceComputationEntity latest = computations.findFirstByTripIdOrderByIdDesc(trip.getId()).orElse(null);
+        if (latest != null && isStillValid(latest, inputHash)) {
+            return viewOf(trip, latest);
+        }
+
+        TripDistanceResult result = engine.compute(evidence);
+        DistanceComputationEntity saved = computations.save(toEntity(trip, inputHash, result));
+        trip.useComputation(saved.getId(),
+                result.status() == TripStatus.OK ? DistanceState.OK : DistanceState.DEGRADED);
+        trips.save(trip);
+        if (trip.isBilled() && result.status() == TripStatus.OK) {
+            adjustIfDifferent(trip, saved, reason);
+        }
+        return viewOf(trip, saved);
+    }
+
+    private void adjustIfDifferent(TripEntity trip, DistanceComputationEntity computation, String reason) {
+        BigDecimal alreadyBilled = totalBilled(trip);
+        BigDecimal delta = computation.getBillableKm().subtract(alreadyBilled);
+        if (delta.signum() != 0) {
+            adjustments.save(new BillingAdjustmentEntity(trip.getTenantId(), trip.getId(), computation.getId(),
+                    delta, reason, clock.instant()));
+        }
+    }
+
+    /** What the customer has been charged for so far: the closed invoice plus all adjustments. */
+    private BigDecimal totalBilled(TripEntity trip) {
+        BigDecimal total = trip.getBilledKm();
+        for (BillingAdjustmentEntity adjustment : adjustments.findByTripIdOrderByIdAsc(trip.getId())) {
+            total = total.add(adjustment.getDeltaKm());
+        }
+        return total;
+    }
+
+    TripView viewOf(TripEntity trip) {
+        DistanceComputationEntity latest = computations.findFirstByTripIdOrderByIdDesc(trip.getId())
+                .orElseThrow(TripNotFoundException::new);
+        return viewOf(trip, latest);
+    }
+
+    private TripView viewOf(TripEntity trip, DistanceComputationEntity latest) {
+        return TripView.of(trip, latest, trip.isBilled() ? totalBilled(trip) : null);
     }
 
     public TripView get(String tenantId, String tripRef) {
         return tx.execute(status -> {
             TripEntity trip = trips.findByTenantIdAndTripRef(tenantId, tripRef).orElseThrow(TripNotFoundException::new);
-            DistanceComputationEntity latest = computations.findFirstByTripIdOrderByIdDesc(trip.getId())
-                    .orElseThrow(TripNotFoundException::new);
-            return TripView.of(trip, latest);
+            return viewOf(trip);
         });
     }
 

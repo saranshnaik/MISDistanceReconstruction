@@ -8,7 +8,11 @@ import com.moveinsync.distance.persistence.TripEntity;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/** What we tell callers about a trip: its state and the latest computed distance. */
+/**
+ * What we tell callers about a trip: its state and the latest computed distance.
+ * billedKm is what the invoice said when it was closed and never changes; finalBilledKm is
+ * billedKm plus every signed adjustment since (null while the trip is unbilled).
+ */
 public record TripView(
         String tripRef,
         TripType tripType,
@@ -24,13 +28,14 @@ public record TripView(
         int cacheHits,
         Long computationId,
         Instant computedAt,
-        BigDecimal billedKm) {
+        BigDecimal billedKm,
+        BigDecimal finalBilledKm) {
 
-    public static TripView of(TripEntity trip, DistanceComputationEntity latest) {
+    public static TripView of(TripEntity trip, DistanceComputationEntity latest, BigDecimal finalBilledKm) {
         return new TripView(trip.getTripRef(), trip.getTripType(), trip.getTripStart(), trip.getTripEnd(),
                 trip.getDistanceState(), trip.getBillingState(),
                 latest.getBillableKm(), latest.getNaiveKm(), latest.getRuleVersion(),
                 latest.getRouteRequests(), latest.getProviderCalls(), latest.getCacheHits(),
-                latest.getId(), latest.getComputedAt(), trip.getBilledKm());
+                latest.getId(), latest.getComputedAt(), trip.getBilledKm(), finalBilledKm);
     }
 }
