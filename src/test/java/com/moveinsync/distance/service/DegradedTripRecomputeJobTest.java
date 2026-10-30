@@ -14,9 +14,11 @@ import com.moveinsync.distance.engine.model.TripType;
 import com.moveinsync.distance.engine.routing.CircuitBreaker;
 import com.moveinsync.distance.engine.routing.MutableClock;
 import com.moveinsync.distance.engine.routing.SimulatedRoutingProvider;
+import com.moveinsync.distance.observability.EngineMetrics;
 import com.moveinsync.distance.persistence.DistanceState;
 import com.moveinsync.distance.persistence.TripEntity;
 import com.moveinsync.distance.persistence.TripRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -110,7 +112,7 @@ class DegradedTripRecomputeJobTest {
         }
         TripRepository repository = mock(TripRepository.class);
         TripService service = mock(TripService.class);
-        DegradedTripRecomputeJob quietJob = new DegradedTripRecomputeJob(repository, service, breaker);
+        DegradedTripRecomputeJob quietJob = new DegradedTripRecomputeJob(repository, service, breaker, new EngineMetrics(new SimpleMeterRegistry()));
 
         assertEquals(0, quietJob.runOnce());
 
@@ -132,7 +134,7 @@ class DegradedTripRecomputeJobTest {
         when(ok.distanceState()).thenReturn(DistanceState.OK);
         when(service.compute("acme", "fine")).thenReturn(ok);
 
-        int recovered = new DegradedTripRecomputeJob(repository, service, closed).runOnce();
+        int recovered = new DegradedTripRecomputeJob(repository, service, closed, new EngineMetrics(new SimpleMeterRegistry())).runOnce();
 
         assertEquals(1, recovered);
         verify(service).compute("acme", "broken");

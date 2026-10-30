@@ -26,4 +26,6 @@ public interface TripRepository extends JpaRepository<TripEntity, Long> {
     List<TripEntity> findTop100ByDistanceStateOrderByIdAsc(DistanceState state);
 
     long countByDistanceState(DistanceState state);
+
+    Optional<TripEntity> findFirstByDistanceStateOrderByIdAsc(DistanceState state);
 }

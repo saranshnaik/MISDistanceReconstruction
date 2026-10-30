@@ -7,6 +7,7 @@ import com.moveinsync.distance.engine.model.EmployeeStop;
 import com.moveinsync.distance.engine.model.Ping;
 import com.moveinsync.distance.engine.model.Segment;
 import com.moveinsync.distance.engine.model.TripEvidence;
+import com.moveinsync.distance.observability.EngineMetrics;
 import com.moveinsync.distance.persistence.BillingAdjustmentEntity;
 import com.moveinsync.distance.persistence.BillingAdjustmentRepository;
 import com.moveinsync.distance.persistence.DistanceComputationEntity;
@@ -55,12 +56,14 @@ public class TripService {
     private final DistanceEngine engine;
     private final JsonMapper json;
     private final Clock clock;
+    private final EngineMetrics metrics;
     private final TransactionTemplate tx;
 
     public TripService(TripRepository trips, TripStopRepository stops, PingRepository pings,
                        DistanceComputationRepository computations,
                        BillingAdjustmentRepository adjustments, DistanceEngine engine,
-                       JsonMapper json, Clock clock, PlatformTransactionManager transactionManager) {
+                       JsonMapper json, Clock clock, EngineMetrics metrics,
+                       PlatformTransactionManager transactionManager) {
         this.trips = trips;
         this.stops = stops;
         this.pings = pings;
@@ -69,6 +72,7 @@ public class TripService {
         this.engine = engine;
         this.json = json;
         this.clock = clock;
+        this.metrics = metrics;
         this.tx = new TransactionTemplate(transactionManager);
     }
 
@@ -106,7 +110,9 @@ public class TripService {
             return viewOf(trip, latest);
         }
 
+        long startedNanos = System.nanoTime();
         TripDistanceResult result = engine.compute(evidence);
+        metrics.computation(result, System.nanoTime() - startedNanos);
         DistanceComputationEntity saved = computations.save(toEntity(trip, inputHash, result));
         trip.useComputation(saved.getId(),
                 result.status() == TripStatus.OK ? DistanceState.OK : DistanceState.DEGRADED);
@@ -123,6 +129,7 @@ public class TripService {
         if (delta.signum() != 0) {
             adjustments.save(new BillingAdjustmentEntity(trip.getTenantId(), trip.getId(), computation.getId(),
                     delta, reason, clock.instant()));
+            metrics.adjustment(delta);
         }
     }
 

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 /** Builds trip request bodies for the API tests. */
-final class TripJson {
+public final class TripJson {
 
     private static final Instant START = Instant.parse("2026-03-01T08:00:00Z");
     private static final double METERS_PER_DEGREE = 111_195.08;
@@ -15,14 +15,14 @@ final class TripJson {
     private TripJson() {
     }
 
-    static Map<String, Object> point(double lat, double lon) {
+    public static Map<String, Object> point(double lat, double lon) {
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("lat", lat);
         p.put("lon", lon);
         return p;
     }
 
-    static String isoAt(int secondsAfterStart) {
+    public static String isoAt(int secondsAfterStart) {
         return START.plusSeconds(secondsAfterStart).toString();
     }
 
@@ -30,7 +30,7 @@ final class TripJson {
      * A cab driving north with a 22-minute hole in the pings and one drop inside it, so routing
      * is needed. Each ref gets its own stretch of map so cached routes never leak between tests.
      */
-    static Map<String, Object> underpass(String ref, String droppedEmployeeRef) {
+    public static Map<String, Object> underpass(String ref, String droppedEmployeeRef) {
         double originLat = 12.9352;
         double originLon = 77.6245 + (Math.abs(ref.hashCode()) % 20_000) * 0.002;
         List<Map<String, Object>> pings = new ArrayList<>();

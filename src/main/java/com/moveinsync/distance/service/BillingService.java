@@ -1,6 +1,7 @@
 package com.moveinsync.distance.service;
 
 import com.moveinsync.distance.engine.model.Ping;
+import com.moveinsync.distance.observability.EngineMetrics;
 import com.moveinsync.distance.persistence.BillingAdjustmentRepository;
 import com.moveinsync.distance.persistence.DistanceComputationEntity;
 import com.moveinsync.distance.persistence.DistanceComputationRepository;
@@ -11,6 +12,7 @@ import com.moveinsync.distance.persistence.TripEntity;
 import com.moveinsync.distance.persistence.TripRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -35,17 +37,19 @@ public class BillingService {
     private final BillingAdjustmentRepository adjustments;
     private final TripService tripService;
     private final Clock clock;
+    private final EngineMetrics metrics;
     private final TransactionTemplate tx;
 
     public BillingService(TripRepository trips, PingRepository pings, DistanceComputationRepository computations,
                           BillingAdjustmentRepository adjustments, TripService tripService, Clock clock,
-                          PlatformTransactionManager transactionManager) {
+                          EngineMetrics metrics, PlatformTransactionManager transactionManager) {
         this.trips = trips;
         this.pings = pings;
         this.computations = computations;
         this.adjustments = adjustments;
         this.tripService = tripService;
         this.clock = clock;
+        this.metrics = metrics;
         this.tx = new TransactionTemplate(transactionManager);
     }
 
@@ -66,6 +70,7 @@ public class BillingService {
             }
             trip.markBilled(latest.getBillableKm(), latest.getId());
             trips.save(trip);
+            metrics.invoiceClosed();
             return tripService.viewOf(trip);
         });
     }
@@ -87,6 +92,7 @@ public class BillingService {
             for (Ping ping : latePings) {
                 if (known.add(new PingKey(ping))) {
                     pings.save(new PingEntity(tenantId, trip.getId(), ping, now));
+                    metrics.latePing(Duration.between(ping.time(), now).toSeconds());
                 }
             }
             pings.flush();

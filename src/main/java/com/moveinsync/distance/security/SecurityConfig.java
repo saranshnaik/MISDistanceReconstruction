@@ -54,6 +54,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/trips/*/bill").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/trips/*/adjustments").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/actuator/prometheus", "/actuator/metrics", "/actuator/metrics/**")
+                                .hasRole("ADMIN")
                         // anything not listed above is closed until someone decides who may use it
                         .anyRequest().denyAll())
                 .exceptionHandling(errors -> errors

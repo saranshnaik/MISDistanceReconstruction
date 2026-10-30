@@ -1,6 +1,7 @@
 package com.moveinsync.distance.service;
 
 import com.moveinsync.distance.engine.routing.CircuitBreaker;
+import com.moveinsync.distance.observability.EngineMetrics;
 import com.moveinsync.distance.persistence.DistanceState;
 import com.moveinsync.distance.persistence.TripEntity;
 import com.moveinsync.distance.persistence.TripRepository;
@@ -31,11 +32,14 @@ public class DegradedTripRecomputeJob {
     private final TripRepository trips;
     private final TripService tripService;
     private final CircuitBreaker breaker;
+    private final EngineMetrics metrics;
 
-    public DegradedTripRecomputeJob(TripRepository trips, TripService tripService, CircuitBreaker breaker) {
+    public DegradedTripRecomputeJob(TripRepository trips, TripService tripService, CircuitBreaker breaker,
+                                    EngineMetrics metrics) {
         this.trips = trips;
         this.tripService = tripService;
         this.breaker = breaker;
+        this.metrics = metrics;
     }
 
     @Scheduled(fixedDelayString = "${recompute.interval-ms:30000}")
@@ -47,6 +51,7 @@ public class DegradedTripRecomputeJob {
     public int runOnce() {
         if (breaker.isRefusingRequests()) {
             log.debug("recompute skipped: routing circuit is open");
+            metrics.recompute("skipped_circuit_open", 1);
             return 0;
         }
         List<TripEntity> degraded = trips.findTop100ByDistanceStateOrderByIdAsc(DistanceState.DEGRADED);
@@ -55,13 +60,16 @@ public class DegradedTripRecomputeJob {
             try {
                 TripView view = tripService.compute(trip.getTenantId(), trip.getTripRef());
                 if (view.distanceState() != DistanceState.OK) {
+                    metrics.recompute("still_degraded", 1);
                     log.info("recompute stopped: routing still unavailable, recovered={} waiting={}",
                             recovered, degraded.size() - recovered);
                     return recovered;
                 }
                 recovered++;
+                metrics.recompute("recovered", 1);
             } catch (RuntimeException e) {
                 // one bad trip must not block the rest; keep the log free of trip data
+                metrics.recompute("failed", 1);
                 log.warn("recompute failed for one trip: {}", e.getClass().getSimpleName());
             }
         }
