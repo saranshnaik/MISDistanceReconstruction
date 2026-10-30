@@ -7,6 +7,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -40,8 +41,20 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // no cookies are used, so there is nothing for CSRF to ride on
                 .sessionManagement(sessions -> sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(requests -> requests
+                        // public
                         .requestMatchers("/api/auth/token", "/actuator/health", "/actuator/health/**").permitAll()
-                        .anyRequest().authenticated())
+                        // riders may look at their own trip's summary (the service checks it is theirs)
+                        .requestMatchers(HttpMethod.GET, "/api/trips/*").hasAnyRole("EMPLOYEE", "OPERATOR", "ADMIN")
+                        // day-to-day operations
+                        .requestMatchers(HttpMethod.POST, "/api/trips", "/api/trips/*/pings", "/api/trips/*/recompute")
+                                .hasAnyRole("OPERATOR", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/trips/*/segments").hasAnyRole("OPERATOR", "ADMIN")
+                        // money and system controls
+                        .requestMatchers(HttpMethod.POST, "/api/trips/*/bill").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/trips/*/adjustments").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // anything not listed above is closed until someone decides who may use it
+                        .anyRequest().denyAll())
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(authoritiesFromRole())));
         return http.build();
     }

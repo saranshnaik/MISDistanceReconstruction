@@ -1,5 +1,6 @@
 package com.moveinsync.distance.web;
 
+import com.moveinsync.distance.security.Role;
 import com.moveinsync.distance.security.TenantContext;
 import com.moveinsync.distance.service.SegmentView;
 import com.moveinsync.distance.service.TripService;
@@ -34,6 +35,9 @@ public class TripController {
 
     @GetMapping("/{tripRef}")
     public TripView get(@PathVariable String tripRef) {
+        if (tenants.currentRole() == Role.EMPLOYEE) {
+            return trips.getForEmployee(tenants.currentTenantId(), tripRef, tenants.currentEmployeeRef());
+        }
         return trips.get(tenants.currentTenantId(), tripRef);
     }
 

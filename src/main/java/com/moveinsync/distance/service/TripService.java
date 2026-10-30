@@ -152,6 +152,20 @@ public class TripService {
         });
     }
 
+    /**
+     * A rider's view: only trips they were part of. Any other trip, including one that does not
+     * exist, gives the same "not found", so a rider cannot probe for other people's trips.
+     */
+    public TripView getForEmployee(String tenantId, String tripRef, String employeeRef) {
+        return tx.execute(status -> {
+            TripEntity trip = trips.findByTenantIdAndTripRef(tenantId, tripRef).orElseThrow(TripNotFoundException::new);
+            if (employeeRef == null || !stops.existsByTripIdAndEmployeeRef(trip.getId(), employeeRef)) {
+                throw new TripNotFoundException();
+            }
+            return viewOf(trip);
+        });
+    }
+
     /** The line-by-line explanation of the latest computation. */
     public List<SegmentView> segments(String tenantId, String tripRef) {
         String stored = tx.execute(status -> {
