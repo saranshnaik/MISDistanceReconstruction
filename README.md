@@ -1,34 +1,44 @@
-# GPS Gap Backfill & Billable Distance Reconstruction
+# GPS gap backfill and billable distance
 
-Backend case study for MoveInSync (Java / Spring Boot). Vendors are paid per
-kilometre, but GPS pings go missing, arrive twice or jump across the city. This
-service rebuilds a distance for every trip that MoveInSync and the vendor can
-both trust, and labels every segment with the rule that produced it.
+My take on MoveInSync case study 1.
 
-> Work in progress. The design is in [docs/DESIGN.md](docs/DESIGN.md).
-> Sections marked _TODO_ are filled in as each phase lands.
+Vendors get paid per kilometre, and the kilometres come from a GPS box in the cab.
+That box goes quiet in tunnels and basements, sometimes dies, and sometimes sends the
+same ping twice or one from 9 km away. If you just add up the distance between pings,
+the vendor gets short-changed. If you ask a maps API to fill every hole, you overpay
+and the API bill explodes.
 
-## Run it
+This service rebuilds a distance for each trip, and every segment in the answer says
+which rule produced it (short gap, parked, routed, rejected...). That way a dispute can
+be settled line by line instead of "the system said so".
+
+**Where it stands:** being built in phases, one commit at a time. Ping cleaning is done.
+Anchors, segment rules, routing, persistence and the API come next.
+The design is written up in [docs/DESIGN.md](docs/DESIGN.md).
+
+## Running it
 
 ```
 docker compose up --build
 ```
 
-The app listens on http://localhost:8080 (health: `/actuator/health`).
+Then open http://localhost:8080/actuator/health. The first build is slow because it
+downloads the Java images and the Maven dependencies.
 
-To build and test without Docker you need JDK 21 or newer:
+Without Docker you need JDK 21 or newer:
 
 ```
 ./mvnw test
 ```
 
-## How a trip is processed
+## How one trip gets processed
 
-1. Clean the pings (duplicates, order, low accuracy, teleports).
-2. Add anchor points (employee pickups/drops, no-shows, office).
-3. For each pair of consecutive points choose a rule and a distance.
-4. Sum the segments, round once, and return the result with every segment labelled.
+1. Clean the pings: dedupe, sort, drop low accuracy, drop teleports.
+2. Add anchor points: where employees were picked up or dropped, no-shows, the office.
+3. For every pair of neighbouring points pick a rule and work out the distance.
+4. Add the segments up, round once at the very end, return everything with its labels.
 
-## Assumptions, rounding, benchmark, trade-offs
+## Still to write
 
-_TODO: filled in during later phases._
+Assumptions, rounding policy, benchmark numbers, trade-offs. They go in as the
+matching code lands, so they describe what was actually built.
