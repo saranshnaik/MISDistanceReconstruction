@@ -4,6 +4,7 @@ import com.moveinsync.distance.engine.model.EmployeeStop;
 import com.moveinsync.distance.engine.model.GeoPoint;
 import com.moveinsync.distance.engine.model.RiderType;
 import com.moveinsync.distance.engine.model.StopEvent;
+import com.moveinsync.distance.engine.model.TrackPoint;
 import com.moveinsync.distance.engine.model.TripEvidence;
 import com.moveinsync.distance.engine.model.TripType;
 import java.time.Instant;
@@ -21,6 +22,11 @@ final class TripFixtures {
     static final GeoPoint ACTUAL_A = new GeoPoint(12.9105, 77.5905);
 
     private TripFixtures() {
+    }
+
+    /** The office anchor is always present; the employee tests only care about the others. */
+    static List<TrackPoint> employeeAnchors(AnchorResult result) {
+        return result.anchors().stream().filter(a -> !"OFFICE".equals(a.ref())).toList();
     }
 
     static Instant at(int minutesAfterStart) {

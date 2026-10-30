@@ -1,5 +1,6 @@
 package com.moveinsync.distance.engine.anchors;
 
+import com.moveinsync.distance.engine.geo.Haversine;
 import com.moveinsync.distance.engine.model.EmployeeStop;
 import com.moveinsync.distance.engine.model.GeoPoint;
 import com.moveinsync.distance.engine.model.PointSource;
@@ -8,6 +9,7 @@ import com.moveinsync.distance.engine.model.RuleConfig;
 import com.moveinsync.distance.engine.model.StopEvent;
 import com.moveinsync.distance.engine.model.TrackPoint;
 import com.moveinsync.distance.engine.model.TripEvidence;
+import com.moveinsync.distance.engine.model.TripType;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -30,6 +32,8 @@ public class AnchorBuilder {
                     .thenComparing(TrackPoint::ref, Comparator.nullsFirst(Comparator.naturalOrder()))
                     .thenComparingDouble(p -> p.point().lat())
                     .thenComparingDouble(p -> p.point().lon());
+
+    private static final String OFFICE_REF = "OFFICE";
 
     private final RuleConfig config;
 
@@ -54,6 +58,8 @@ public class AnchorBuilder {
                 skipped++;
             }
         }
+
+        anchors.add(officeAnchor(trip));
 
         anchors.sort(ANCHOR_ORDER);
         return new AnchorResult(anchors, skipped);
@@ -97,6 +103,24 @@ public class AnchorBuilder {
                     stop.plannedTime(), stop.plannedPoint(), PointSource.NO_SHOW_PLANNED, stop.employeeRef()));
         }
         return Optional.empty();
+    }
+
+    /**
+     * The office is where a LOGIN trip ends and where a LOGOUT trip starts.
+     * We trust the device's own start/end point only if it is within officeRadiusM (400 m) of
+     * the planned office. If it is missing, invalid or further away (cab stopped at the gate
+     * road, bad fix...) we use the planned office location at the same trip start/end time.
+     */
+    private TrackPoint officeAnchor(TripEvidence trip) {
+        boolean tripEndsAtOffice = trip.type() == TripType.LOGIN;
+        Instant time = tripEndsAtOffice ? trip.tripEnd() : trip.tripStart();
+        GeoPoint actual = tripEndsAtOffice ? trip.actualEndPoint() : trip.actualStartPoint();
+
+        if (actual != null && actual.isValid()
+                && Haversine.distanceM(actual, trip.office()) <= config.officeRadiusM()) {
+            return new TrackPoint(time, actual, PointSource.OFFICE_ACTUAL, OFFICE_REF);
+        }
+        return new TrackPoint(time, trip.office(), PointSource.OFFICE_PLANNED, OFFICE_REF);
     }
 
     private boolean isUsable(GeoPoint point, Instant time, TripEvidence trip) {

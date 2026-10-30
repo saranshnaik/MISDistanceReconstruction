@@ -3,6 +3,7 @@ package com.moveinsync.distance.engine.anchors;
 import static com.moveinsync.distance.engine.anchors.TripFixtures.ACTUAL_A;
 import static com.moveinsync.distance.engine.anchors.TripFixtures.PLANNED_A;
 import static com.moveinsync.distance.engine.anchors.TripFixtures.at;
+import static com.moveinsync.distance.engine.anchors.TripFixtures.employeeAnchors;
 import static com.moveinsync.distance.engine.anchors.TripFixtures.stop;
 import static com.moveinsync.distance.engine.anchors.TripFixtures.trip;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,7 +35,7 @@ class NoShowAnchorTest {
     void flagOffMeansNoShowsAddNothing() {
         AnchorResult result = build(FLAG_OFF, noShow(ACTUAL_A, PLANNED_A));
 
-        assertEquals(0, result.anchors().size());
+        assertEquals(0, employeeAnchors(result).size());
         assertEquals(0, result.skipped());
     }
 
@@ -42,25 +43,25 @@ class NoShowAnchorTest {
     void flagOnUsesTheNoShowLocation() {
         AnchorResult result = build(FLAG_ON, noShow(ACTUAL_A, PLANNED_A));
 
-        assertEquals(PointSource.NO_SHOW_ACTUAL, result.anchors().get(0).source());
-        assertEquals(ACTUAL_A, result.anchors().get(0).point());
-        assertEquals(at(12), result.anchors().get(0).time());
+        assertEquals(PointSource.NO_SHOW_ACTUAL, employeeAnchors(result).get(0).source());
+        assertEquals(ACTUAL_A, employeeAnchors(result).get(0).point());
+        assertEquals(at(12), employeeAnchors(result).get(0).time());
     }
 
     @Test
     void flagOnFallsBackToPlannedWhenNoShowLocationIsInvalid() {
         AnchorResult result = build(FLAG_ON, noShow(new GeoPoint(0, 0), PLANNED_A));
 
-        assertEquals(PointSource.NO_SHOW_PLANNED, result.anchors().get(0).source());
-        assertEquals(PLANNED_A, result.anchors().get(0).point());
-        assertEquals(at(10), result.anchors().get(0).time());
+        assertEquals(PointSource.NO_SHOW_PLANNED, employeeAnchors(result).get(0).source());
+        assertEquals(PLANNED_A, employeeAnchors(result).get(0).point());
+        assertEquals(at(10), employeeAnchors(result).get(0).time());
     }
 
     @Test
     void flagOnWithNothingUsableCountsAsSkipped() {
         AnchorResult result = build(FLAG_ON, noShow(null, null));
 
-        assertEquals(0, result.anchors().size());
+        assertEquals(0, employeeAnchors(result).size());
         assertEquals(1, result.skipped());
     }
 
@@ -69,7 +70,7 @@ class NoShowAnchorTest {
         EmployeeStop traveller = stop("E2", RiderType.PLANNED, StopEvent.PICKUP,
                 ACTUAL_A, at(5), null, null, null, null);
 
-        assertEquals(1, build(FLAG_OFF, traveller, noShow(ACTUAL_A, PLANNED_A)).anchors().size());
-        assertEquals(2, build(FLAG_ON, traveller, noShow(ACTUAL_A, PLANNED_A)).anchors().size());
+        assertEquals(1, employeeAnchors(build(FLAG_OFF, traveller, noShow(ACTUAL_A, PLANNED_A))).size());
+        assertEquals(2, employeeAnchors(build(FLAG_ON, traveller, noShow(ACTUAL_A, PLANNED_A))).size());
     }
 }

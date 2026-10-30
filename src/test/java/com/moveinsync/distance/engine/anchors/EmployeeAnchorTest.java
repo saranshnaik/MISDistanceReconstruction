@@ -4,6 +4,7 @@ import static com.moveinsync.distance.engine.anchors.TripFixtures.ACTUAL_A;
 import static com.moveinsync.distance.engine.anchors.TripFixtures.HOME_A;
 import static com.moveinsync.distance.engine.anchors.TripFixtures.PLANNED_A;
 import static com.moveinsync.distance.engine.anchors.TripFixtures.at;
+import static com.moveinsync.distance.engine.anchors.TripFixtures.employeeAnchors;
 import static com.moveinsync.distance.engine.anchors.TripFixtures.stop;
 import static com.moveinsync.distance.engine.anchors.TripFixtures.trip;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,7 +34,7 @@ class EmployeeAnchorTest {
         AnchorResult result = build(stop("E1", RiderType.PLANNED, StopEvent.DROP,
                 ACTUAL_A, at(20), PLANNED_A, at(25), null, null));
 
-        TrackPoint anchor = result.anchors().get(0);
+        TrackPoint anchor = employeeAnchors(result).get(0);
         assertEquals(PointSource.EMPLOYEE_ACTUAL, anchor.source());
         assertEquals(ACTUAL_A, anchor.point());
         assertEquals(at(20), anchor.time());
@@ -45,7 +46,7 @@ class EmployeeAnchorTest {
         AnchorResult result = build(stop("E1", RiderType.AD_HOC, StopEvent.DROP,
                 null, null, null, null, HOME_A, at(10)));
 
-        TrackPoint anchor = result.anchors().get(0);
+        TrackPoint anchor = employeeAnchors(result).get(0);
         assertEquals(PointSource.EMPLOYEE_HOME_SIGNIN, anchor.source());
         assertEquals(HOME_A, anchor.point());
         assertEquals(at(10), anchor.time());
@@ -56,7 +57,7 @@ class EmployeeAnchorTest {
         AnchorResult result = build(stop("E1", RiderType.PLANNED, StopEvent.PICKUP,
                 null, null, PLANNED_A, at(5), null, null));
 
-        TrackPoint anchor = result.anchors().get(0);
+        TrackPoint anchor = employeeAnchors(result).get(0);
         assertEquals(PointSource.EMPLOYEE_PLANNED, anchor.source());
         assertEquals(PLANNED_A, anchor.point());
         assertEquals(at(5), anchor.time());
@@ -67,7 +68,7 @@ class EmployeeAnchorTest {
         AnchorResult result = build(stop("E1", RiderType.PLANNED, StopEvent.DROP,
                 new GeoPoint(0, 0), at(20), PLANNED_A, at(25), null, null));
 
-        assertEquals(PointSource.EMPLOYEE_PLANNED, result.anchors().get(0).source());
+        assertEquals(PointSource.EMPLOYEE_PLANNED, employeeAnchors(result).get(0).source());
     }
 
     @Test
@@ -76,7 +77,7 @@ class EmployeeAnchorTest {
         AnchorResult result = build(stop("E1", RiderType.PLANNED, StopEvent.DROP,
                 ACTUAL_A, afterTheTrip, PLANNED_A, at(25), null, null));
 
-        assertEquals(PointSource.EMPLOYEE_PLANNED, result.anchors().get(0).source());
+        assertEquals(PointSource.EMPLOYEE_PLANNED, employeeAnchors(result).get(0).source());
     }
 
     @Test
@@ -84,7 +85,7 @@ class EmployeeAnchorTest {
         AnchorResult result = build(stop("E1", RiderType.AD_HOC, StopEvent.PICKUP,
                 ACTUAL_A, null, null, null, HOME_A, at(10)));
 
-        assertEquals(PointSource.EMPLOYEE_HOME_SIGNIN, result.anchors().get(0).source());
+        assertEquals(PointSource.EMPLOYEE_HOME_SIGNIN, employeeAnchors(result).get(0).source());
     }
 
     @Test
@@ -93,7 +94,7 @@ class EmployeeAnchorTest {
         AnchorResult result = build(stop("E1", RiderType.AD_HOC, StopEvent.DROP,
                 null, null, PLANNED_A, at(25), null, null));
 
-        assertEquals(0, result.anchors().size());
+        assertEquals(0, employeeAnchors(result).size());
         assertEquals(1, result.skipped());
     }
 
@@ -102,7 +103,7 @@ class EmployeeAnchorTest {
         AnchorResult result = build(stop("E1", RiderType.PLANNED, StopEvent.DROP,
                 null, null, null, null, null, null));
 
-        assertEquals(0, result.anchors().size());
+        assertEquals(0, employeeAnchors(result).size());
         assertEquals(1, result.skipped());
     }
 
@@ -114,7 +115,7 @@ class EmployeeAnchorTest {
                 stop("E3", RiderType.PLANNED, StopEvent.DROP, ACTUAL_A, at(25), null, null, null, null));
 
         assertEquals(List.of("E1", "E3", "E2"),
-                result.anchors().stream().map(TrackPoint::ref).toList());
+                employeeAnchors(result).stream().map(TrackPoint::ref).toList());
     }
 
     @Test
@@ -122,6 +123,6 @@ class EmployeeAnchorTest {
         EmployeeStop e1 = stop("E1", RiderType.PLANNED, StopEvent.DROP, ACTUAL_A, at(15), null, null, null, null);
         EmployeeStop e2 = stop("E2", RiderType.PLANNED, StopEvent.DROP, ACTUAL_A, at(15), null, null, null, null);
 
-        assertEquals(build(e1, e2).anchors(), build(e2, e1).anchors());
+        assertEquals(employeeAnchors(build(e1, e2)), employeeAnchors(build(e2, e1)));
     }
 }
