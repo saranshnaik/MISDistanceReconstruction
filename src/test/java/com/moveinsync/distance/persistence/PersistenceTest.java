@@ -47,7 +47,7 @@ class PersistenceTest {
 
     private DistanceComputationEntity newComputation(TripEntity trip, TripStatus status) {
         return computations.saveAndFlush(new DistanceComputationEntity(trip.getTenantId(), trip.getId(),
-                "hash", "v1-abcd1234", 30_600_000, new BigDecimal("30.60"), status, 3, 1, 0, "[]", START));
+                "hash", "v1-abcd1234", 30_600_000, new BigDecimal("30.60"), new BigDecimal("27.10"), status, 3, 1, 0, "[]", START));
     }
 
     @Test

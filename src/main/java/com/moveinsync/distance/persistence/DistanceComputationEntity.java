@@ -30,6 +30,7 @@ public class DistanceComputationEntity {
     private String ruleVersion;
     private long totalMm;
     private BigDecimal billableKm;
+    private BigDecimal naiveKm;
 
     @Enumerated(EnumType.STRING)
     private TripStatus status;
@@ -45,7 +46,8 @@ public class DistanceComputationEntity {
     }
 
     public DistanceComputationEntity(String tenantId, Long tripId, String inputHash, String ruleVersion,
-                                     long totalMm, BigDecimal billableKm, TripStatus status,
+                                     long totalMm, BigDecimal billableKm, BigDecimal naiveKm,
+                                     TripStatus status,
                                      int routeRequests, int providerCalls, int cacheHits,
                                      String segmentsJson, Instant computedAt) {
         this.tenantId = tenantId;
@@ -54,6 +56,7 @@ public class DistanceComputationEntity {
         this.ruleVersion = ruleVersion;
         this.totalMm = totalMm;
         this.billableKm = billableKm;
+        this.naiveKm = naiveKm;
         this.status = status;
         this.routeRequests = routeRequests;
         this.providerCalls = providerCalls;
@@ -84,6 +87,10 @@ public class DistanceComputationEntity {
 
     public BigDecimal getBillableKm() {
         return billableKm;
+    }
+
+    public BigDecimal getNaiveKm() {
+        return naiveKm;
     }
 
     public TripStatus getStatus() {
