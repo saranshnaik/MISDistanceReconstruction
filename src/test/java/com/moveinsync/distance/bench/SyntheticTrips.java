@@ -23,7 +23,8 @@ import java.util.Random;
  * where GPS is lost, with employee drop-offs inside them. So the routing questions repeat
  * between trips and the cache has something realistic to work with.
  *
- * A trip: about 3000 seconds long with a ping every 2 seconds, so about 1500 pings, then mess
+ * A trip: about 3400 seconds long with a ping every 2 seconds (about 1700 pings, about 1500 once
+ * the blackout zones have swallowed their share), then mess
  * is added the way real devices do it:
  *   - 2% of pings are sent twice
  *   - 1% have terrible accuracy
@@ -114,7 +115,7 @@ public class SyntheticTrips {
         Route route = routes.get(index % routes.size());
         Random rnd = new Random(seed * 1_000_003L + index);
 
-        int durationSeconds = 2 * (int) Math.round((3000 + (rnd.nextDouble() - 0.5) * 600) / 2); // 2700..3300, even
+        int durationSeconds = 2 * (int) Math.round((3400 + (rnd.nextDouble() - 0.5) * 680) / 2); // 3060..3740, even
         Instant start = BASE_TIME.plusSeconds(60L * index);
         Instant end = start.plusSeconds(durationSeconds);
 
