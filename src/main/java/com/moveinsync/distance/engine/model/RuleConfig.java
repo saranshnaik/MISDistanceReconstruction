@@ -27,4 +27,9 @@ public record RuleConfig(
         return new RuleConfig(maxSpeedKmh, value, shortGapSeconds, parkedSpeedKmh,
                 officeRadiusM, maxRoutedKm, detourFactor, includeNoShows);
     }
+
+    public RuleConfig withIncludeNoShows(boolean value) {
+        return new RuleConfig(maxSpeedKmh, maxAccuracyM, shortGapSeconds, parkedSpeedKmh,
+                officeRadiusM, maxRoutedKm, detourFactor, value);
+    }
 }

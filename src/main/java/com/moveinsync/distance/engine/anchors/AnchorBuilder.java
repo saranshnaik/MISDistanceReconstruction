@@ -42,10 +42,12 @@ public class AnchorBuilder {
         int skipped = 0;
 
         for (EmployeeStop stop : trip.stops()) {
-            if (stop.event() == StopEvent.NO_SHOW) {
-                continue; // handled separately, behind the config flag
+            if (stop.event() == StopEvent.NO_SHOW && !config.includeNoShows()) {
+                continue; // flag is off: the cab never really went there, so nothing to add
             }
-            Optional<TrackPoint> anchor = employeeAnchor(stop, trip);
+            Optional<TrackPoint> anchor = stop.event() == StopEvent.NO_SHOW
+                    ? noShowAnchor(stop, trip)
+                    : employeeAnchor(stop, trip);
             if (anchor.isPresent()) {
                 anchors.add(anchor.get());
             } else {
@@ -76,6 +78,23 @@ public class AnchorBuilder {
         } else if (isUsable(stop.plannedPoint(), stop.plannedTime(), trip)) {
             return Optional.of(new TrackPoint(
                     stop.plannedTime(), stop.plannedPoint(), PointSource.EMPLOYEE_PLANNED, stop.employeeRef()));
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * A no-show means the cab went to the pickup spot and the employee never turned up.
+     * We use the spot where the driver marked the no-show, or the planned spot if that
+     * is not usable. Only called when the includeNoShows flag is on.
+     */
+    private Optional<TrackPoint> noShowAnchor(EmployeeStop stop, TripEvidence trip) {
+        if (isUsable(stop.actualPoint(), stop.actualTime(), trip)) {
+            return Optional.of(new TrackPoint(
+                    stop.actualTime(), stop.actualPoint(), PointSource.NO_SHOW_ACTUAL, stop.employeeRef()));
+        }
+        if (isUsable(stop.plannedPoint(), stop.plannedTime(), trip)) {
+            return Optional.of(new TrackPoint(
+                    stop.plannedTime(), stop.plannedPoint(), PointSource.NO_SHOW_PLANNED, stop.employeeRef()));
         }
         return Optional.empty();
     }
