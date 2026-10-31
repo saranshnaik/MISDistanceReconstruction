@@ -42,7 +42,7 @@ Layers, top to bottom, and the rule each one keeps:
 | web | `web` | no business rules: it turns HTTP into a service call and back |
 | security | `security` | never read the tenant from the request body, only from the verified token |
 | service | `service` | no distance maths: it stores, locks, hashes and calls the engine |
-| engine | `engine.*` | no Spring, no database, no clock: same input and same config give the same output |
+| engine | `engine.*` | no Spring, no database, and the distance maths never reads the time or the network: same input and same config give the same output (the routing answer is the one outside input; the circuit breaker takes its clock as a parameter so tests can move time) |
 | persistence | `persistence` | every lookup carries the tenant id |
 
 The engine being plain Java is what makes the hard rules testable without a server: most of the
@@ -157,9 +157,11 @@ For one trip with n pings, k employee stops and g real gaps:
 | route resolution | O(g log g) (sort for stable batches) | O(g) |
 
 Across trips nothing is shared except the route cache (bounded: 100,000 entries). Measured, not
-estimated: about 0.7 ms median and 2 ms p99 per 1,500-ping trip on one core, about 800-1,000
-trips/s per thread, about 6,900 trips/s on 16 threads, ~420 MB peak heap for 10,000 trips (see
-the README for the table and the machine).
+estimated, over repeated runs of the 10,000-trip benchmark: about 1 ms median and 2 ms p99 per
+1,500-ping trip on one core, roughly 700-1,000 trips/s per thread and about 6,600-6,900 trips/s on
+16 threads. Peak heap lands anywhere from about 120 MB to about 860 MB: it is sampled while the
+run is going, so it includes garbage the collector has not got to yet. The README has the table
+and the machine; treat all of these as "about", since they move 10-15% between runs.
 
 Where it stops, in the order I expect it to bite:
 1. **The database, not the engine.** A trip's computation holds a row lock and a transaction while

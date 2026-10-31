@@ -9,7 +9,6 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import org.springframework.stereotype.Component;
 
 /**

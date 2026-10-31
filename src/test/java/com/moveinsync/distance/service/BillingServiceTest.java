@@ -8,8 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.moveinsync.distance.engine.model.EmployeeStop;
 import com.moveinsync.distance.engine.model.GeoPoint;
 import com.moveinsync.distance.engine.model.Ping;
-import com.moveinsync.distance.engine.model.RiderType;
-import com.moveinsync.distance.engine.model.StopEvent;
 import com.moveinsync.distance.engine.model.TripEvidence;
 import com.moveinsync.distance.engine.model.TripType;
 import com.moveinsync.distance.engine.routing.SimulatedRoutingProvider;
