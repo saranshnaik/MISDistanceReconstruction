@@ -12,8 +12,8 @@ import java.time.Duration;
 import org.springframework.stereotype.Component;
 
 /**
- * Numbers that are read off the current state each time Prometheus scrapes, rather than counted
- * as things happen: the size of the backlog, how old it is, and what the circuit breaker is doing.
+ * Numbers read off the current state whenever Prometheus scrapes, instead of counted as
+ * things happen: backlog size, its age, and what the circuit breaker is doing.
  */
 @Component
 public class OperationalGauges {

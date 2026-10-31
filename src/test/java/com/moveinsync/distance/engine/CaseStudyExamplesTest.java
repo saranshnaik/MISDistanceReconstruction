@@ -23,19 +23,18 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * The two examples from the case study, recreated with made-up but realistic numbers.
+ * The two examples from the case study, redone with made-up but realistic numbers.
  *
- * Example 1: a 31 km logout trip loses GPS for 22 minutes (underpass and basement). Two
- * employees were dropped during the gap. The naive sum of the pings under-pays; the engine
- * anchors the two drops, routes only the real gaps and gets back to ~31 km, with every segment
- * labelled.
+ * 1: a 31 km logout trip loses GPS for 22 minutes (underpass, basement) and two employees
+ * are dropped inside the gap. The naive sum under-pays; the engine anchors the drops, routes
+ * only the real gaps and gets back to ~31 km with every segment labelled.
  *
- * Example 2: a burst of pings 9 km away for 4 seconds is a bad fix, so it is dropped and the
- * trip distance does not change.
+ * 2: a burst of pings 9 km away for 4 seconds is a bad fix, so it's dropped and the distance
+ * doesn't change.
  *
- * The cab drives 15 km north, turns right and drives 16 km east, at a steady 10 m/s (36 km/h).
- * The turn happens inside the gap, which is why simply chaining the pings cuts the corner.
- * The road network is a stub that knows the true distance along that route.
+ * The cab drives 15 km north, turns right and drives 16 km east at a steady 10 m/s. The turn
+ * happens inside the gap, which is why chaining the pings cuts the corner. The road network
+ * is a stub that knows the true distance along that route.
  */
 class CaseStudyExamplesTest {
 
@@ -57,7 +56,7 @@ class CaseStudyExamplesTest {
         return new GeoPoint(CORNER.lat(), CORNER.lon() + east / metersPerDegreeLon);
     }
 
-    /** Distance driven along the route to reach a point that lies on it. */
+    /** Distance driven along the route to reach a point on it. */
     private static double alongRoute(GeoPoint p) {
         boolean onNorthLeg = p.lon() == ORIGIN.lon();
         return onNorthLeg ? Haversine.distanceM(ORIGIN, p) : LEG_NORTH_M + Haversine.distanceM(CORNER, p);

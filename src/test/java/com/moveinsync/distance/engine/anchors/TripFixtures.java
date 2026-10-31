@@ -24,7 +24,7 @@ final class TripFixtures {
     private TripFixtures() {
     }
 
-    /** The office anchor is always present; the employee tests only care about the others. */
+    /** The office anchor is always there; the employee tests only care about the others. */
     static List<TrackPoint> employeeAnchors(AnchorResult result) {
         return result.anchors().stream().filter(a -> !"OFFICE".equals(a.ref())).toList();
     }

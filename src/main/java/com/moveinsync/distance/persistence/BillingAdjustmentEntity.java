@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/** A signed correction to a closed invoice, e.g. +1.80 km after late pings arrived. */
+/** Signed correction to a closed invoice, e.g. +1.80 km once late pings arrive. */
 @Entity
 @Table(name = "billing_adjustment")
 public class BillingAdjustmentEntity {

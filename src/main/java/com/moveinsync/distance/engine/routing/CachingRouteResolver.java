@@ -18,23 +18,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Cuts routing cost three ways, in this order:
+ * Cuts routing cost in three steps: snap each gap to a pair of grid cells, skip pairs we
+ * already know (this trip or any earlier one), and send the rest in requests of at most 25.
  *
- *  1. snap: each gap is reduced to a pair of grid cells (start cell, end cell)
- *  2. dedupe + cache: a cell pair seen before, in this trip or any earlier one, costs nothing
- *  3. batch: the cell pairs we still do not know are sent in requests of at most 25 pairs
+ * The provider is always asked about cell centres, never the exact points. That way a hit
+ * and a miss give the same number, so the cache can't change a bill. The price is up to
+ * roughly 150 m of position error on a routed gap.
  *
- * For billing safety the provider is ALWAYS asked about the cell centres, never the exact
- * points. So a cache hit and a miss give exactly the same number, and caching can never change
- * a bill. The price is up to roughly 150 m of position error on a routed gap.
+ * Start and end in the same cell (under ~110 m) would come out as 0 centre-to-centre, so
+ * those get the straight line and no request.
  *
- * Start and end in the same cell (closer than ~110 m) would route centre-to-centre as 0, so
- * those get the straight line and cost no request.
- *
- * Several trips asking for the same new route at the same moment share one request (the cache
- * holds the in-flight answer). A failed request is not cached; everyone waiting gets the error
- * and the next call tries again. Entries expire after 24 hours so a changed road network is
- * eventually picked up.
+ * Two trips asking for the same new route at once share a single request (the in-flight
+ * answer is what gets cached). A failed request is not cached, everyone waiting gets the
+ * error and the next call retries. Entries expire after 24 h so road changes get picked up
+ * eventually.
  */
 public class CachingRouteResolver implements RouteResolver {
 
@@ -118,7 +115,7 @@ public class CachingRouteResolver implements RouteResolver {
         }
     }
 
-    /** Sorted first so the same set of missing routes always makes the same requests. */
+    /** Sorted first, so the same set of missing routes always produces the same requests. */
     private Map<CellPair, Double> loadInBatches(Collection<? extends CellPair> missing,
                                                 AtomicInteger providerCalls) {
         List<CellPair> ordered = new ArrayList<>(missing);
@@ -140,12 +137,12 @@ public class CachingRouteResolver implements RouteResolver {
         return loaded;
     }
 
-    /** Distinct routes served from the cache so far (all trips together). */
+    /** Distinct routes served from cache so far, all trips together. */
     public long hits() {
         return totalHits.get();
     }
 
-    /** Distinct routes that had to be fetched so far (all trips together). */
+    /** Distinct routes fetched from the provider so far, all trips together. */
     public long misses() {
         return totalLoads.get();
     }

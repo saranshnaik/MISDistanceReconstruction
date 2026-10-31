@@ -1,9 +1,6 @@
 package com.moveinsync.distance.engine.cleaning;
 
-/**
- * How many pings were thrown away and why. Every received ping ends up in exactly one bucket,
- * so {@code received == dropped counts + kept}.
- */
+/** What was thrown away and why. Each received ping lands in exactly one bucket. */
 public record CleaningReport(
         int received,
         int outsideTripWindow,

@@ -24,13 +24,13 @@ public class BillingController {
         this.tenants = tenants;
     }
 
-    /** Close the invoice for this trip at its current distance. */
+    /** Close the invoice at the trip's current distance. */
     @PostMapping("/bill")
     public TripView bill(@PathVariable String tripRef) {
         return billing.bill(tenants.currentTenantId(), tripRef);
     }
 
-    /** Pings that arrived late. After billing, the effect shows up as a signed adjustment. */
+    /** Late pings. After billing the effect shows up as a signed adjustment. */
     @PostMapping("/pings")
     public TripView latePings(@PathVariable String tripRef, @Valid @RequestBody LatePingsRequest request) {
         return billing.addLatePings(tenants.currentTenantId(), tripRef, request.toEngine());

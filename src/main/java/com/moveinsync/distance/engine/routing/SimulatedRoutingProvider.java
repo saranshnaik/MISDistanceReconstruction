@@ -9,21 +9,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * A stand-in for a real maps API, so the project runs and tests without keys or internet.
+ * Stand-in for a maps API so everything runs and tests without keys or internet.
  *
- * Roads are never straight, so the "driving distance" is the straight line times a detour
- * factor between 1.25 and 1.45. The factor comes from the coordinates themselves, which means
- * the same two points always give the same answer, on any run.
- *
- * It behaves like the real thing in the ways that matter here: every request is counted (calls
- * cost money), it can be slow, and it can be switched off to simulate an outage. A batch of
- * pairs is ONE request, like a distance-matrix endpoint. A real provider (OSRM, Google...)
- * would implement the same RoutingProvider interface.
+ * Roads aren't straight, so driving distance is the straight line times a detour factor
+ * between 1.25 and 1.45, derived from the coordinates themselves: same points, same answer,
+ * every run. Like the real thing it counts every request (calls cost money), can be slow and
+ * can be switched off to simulate an outage. A batch is ONE request, like a distance-matrix
+ * endpoint. OSRM or Google would implement the same RoutingProvider interface.
  */
 public class SimulatedRoutingProvider implements RoutingProvider {
 
     private static final double MIN_DETOUR = 1.25;
-    private static final int DETOUR_STEPS = 21; // 1.25, 1.26 ... 1.45
+    private static final int DETOUR_STEPS = 21; // 1.25 .. 1.45
 
     private final long latencyMs;
     private final AtomicBoolean down = new AtomicBoolean(false);
@@ -67,7 +64,7 @@ public class SimulatedRoutingProvider implements RoutingProvider {
         return down.get();
     }
 
-    /** Every request counts, including the ones that failed: that is how real APIs bill. */
+    /** Failed requests count too; that's how real APIs bill. */
     public long callCount() {
         return calls.get();
     }

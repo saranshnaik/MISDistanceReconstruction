@@ -11,15 +11,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Exchange a username and password for a signed token. */
+/** Username + password in, signed token out. */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     /**
-     * A real bcrypt hash of nothing in particular. When the username does not exist we still
-     * check the password against this, so "unknown user" and "wrong password" take about the
-     * same time and give the same answer.
+     * A real bcrypt hash of nothing in particular. For an unknown username we still check the
+     * password against it, so "unknown user" and "wrong password" take about the same time and
+     * give the same answer.
      */
     private final String decoyHash;
 

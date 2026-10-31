@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 /**
  * A coordinate as sent by a client. Range checks are left to the engine on purpose: a device
- * that reports latitude 95 should lose that one point, not get the whole trip rejected.
+ * reporting latitude 95 should lose that one point, not get the whole trip rejected.
  */
 public record PointDto(@NotNull Double lat, @NotNull Double lon) {
 

@@ -4,8 +4,8 @@ package com.moveinsync.distance.engine.model;
 public record GeoPoint(double lat, double lon) {
 
     /**
-     * A point is usable if both numbers are real, inside the valid range, and not (0, 0).
-     * (0, 0) is what many devices send when they have no fix at all.
+     * Usable means real numbers, in range, and not (0, 0): lots of devices send (0, 0) when
+     * they have no fix.
      */
     public boolean isValid() {
         if (!Double.isFinite(lat) || !Double.isFinite(lon)) {

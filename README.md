@@ -32,7 +32,7 @@ slow because it downloads the Java images and Maven dependencies.
 Tests need no Docker (they use an in-memory H2 database):
 
 ```
-./mvnw test                  # the normal suite (241 tests)
+./mvnw test                  # the normal suite (240 tests)
 ./mvnw test -Pbenchmark      # also the 10,000-trip benchmark and the 10,000-trip failure test
 ```
 

@@ -1,6 +1,6 @@
 package com.moveinsync.distance.security;
 
-/** Wrong username or password. Deliberately says nothing about which of the two was wrong. */
+/** Wrong username or password; says nothing about which. */
 public class InvalidCredentialsException extends RuntimeException {
 
     public InvalidCredentialsException() {

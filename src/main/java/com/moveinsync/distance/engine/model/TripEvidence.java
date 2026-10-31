@@ -5,11 +5,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Everything we know about one trip. This is the only input the engine needs.
- *
- * @param actualStartPoint where the device says the trip started (may be null)
- * @param actualEndPoint   where the device says the trip ended (may be null)
- * @param office           the planned office location
+ * Everything known about one trip; the only input the engine needs. The actual start/end
+ * points come from the device and may be null, office is the planned location.
  */
 public record TripEvidence(
         TripType type,

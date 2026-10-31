@@ -27,17 +27,14 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
- * Every failure leaves the API in the same shape (RFC 9457 "problem details"):
- *
- *   { "status": 404, "title": "Not Found", "code": "TRIP_NOT_FOUND",
- *     "detail": "trip not found", "traceId": "..." }
- *
- * The rules this class keeps:
- *  - "code" is stable and machine-readable; "detail" is a fixed sentence, never built from input.
- *  - Nothing the caller sent is echoed back: no ids, coordinates, emails or parser snippets.
- *    Validation errors name the FIELD and the rule that failed, never the rejected value.
- *  - Unexpected errors say only "unexpected error" plus the traceId. The real cause stays in the
- *    server log, where the traceId finds it.
+ * Every failure leaves the API in the same RFC 9457 problem-details shape, e.g.
+ * { "status": 404, "title": "Not Found", "code": "TRIP_NOT_FOUND", "detail": "trip not
+ * found", "traceId": "..." }
+ * "code" is stable and machine-readable, "detail" a fixed sentence never built from input.
+ * Nothing the caller sent is echoed back (no ids, coordinates, emails, parser snippets);
+ * validation errors name the FIELD and the rule, never the rejected value. Unexpected errors
+ * say "unexpected error" plus the traceId, and the real cause stays in the server log where
+ * the traceId finds it.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -65,10 +62,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(HttpStatus.CONFLICT, "CONFLICT", "the request conflicts with the current state");
     }
 
-    /** Last resort for anything we did not plan for. */
+    /** Last resort for anything we didn't plan for. */
     @ExceptionHandler(Exception.class)
     public ProblemDetail unexpected(Exception e) {
-        // Class and first stack frame only: exception MESSAGES can contain request data.
+        // class and first frame only, exception messages can contain request data
         StackTraceElement top = e.getStackTrace().length > 0 ? e.getStackTrace()[0] : null;
         log.error("unexpected error {} at {}", e.getClass().getName(), top);
         return problem(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "unexpected error");
@@ -89,18 +86,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException e,
             HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        // the parser's own message can quote part of the body, so it is never passed on
+        // the parser's message can quote the body, so it never goes out
         return ResponseEntity.badRequest()
                 .body(problem(HttpStatus.BAD_REQUEST, "MALFORMED_REQUEST", "request body could not be read"));
     }
 
-    /** Every other Spring MVC error (405, 415, missing parameter...) gets the same shape. */
+    /** Every other MVC error (405, 415, missing parameter...) gets the same shape. */
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception e, Object body, HttpHeaders headers,
             HttpStatusCode statusCode, WebRequest request) {
         Object effectiveBody = body;
         if (effectiveBody == null && e instanceof ErrorResponse errorResponse) {
-            // Spring normally builds this body one step later; we need it now to add our fields
+            // Spring builds this body a step later, but we need it now to add our fields
             effectiveBody = errorResponse.updateAndGetBody(null, LocaleContextHolder.getLocale());
         }
         if (effectiveBody instanceof ProblemDetail detail) {
@@ -123,8 +120,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Spring would fill "instance" with the request path, which contains trip refs. A fixed value
-     * stops that: the path is only ever in the access log, never echoed back.
+     * Spring would fill "instance" with the request path, which has trip refs in it. A fixed
+     * value stops that; the path only ever appears in the access log.
      */
     private static URI neutralInstance(String code) {
         return URI.create("urn:error:" + code.toLowerCase());

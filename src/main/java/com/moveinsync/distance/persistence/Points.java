@@ -2,7 +2,7 @@ package com.moveinsync.distance.persistence;
 
 import com.moveinsync.distance.engine.model.GeoPoint;
 
-/** Small helpers for storing optional points as two nullable columns. */
+/** Helpers for storing an optional point as two nullable columns. */
 final class Points {
 
     private Points() {

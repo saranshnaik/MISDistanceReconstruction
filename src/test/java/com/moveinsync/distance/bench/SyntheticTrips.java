@@ -18,19 +18,15 @@ import java.util.Random;
  * Makes believable trips for tests and the benchmark. Everything comes from the seed, so the
  * same seed gives the same trips on any machine.
  *
- * The world: about 40 routes across a city-sized box. Many trips drive the same route (as real
- * commutes do), and every route has fixed "blackout zones" (a tunnel, a basement car park)
- * where GPS is lost, with employee drop-offs inside them. So the routing questions repeat
- * between trips and the cache has something realistic to work with.
+ * About 40 routes across a city-sized box. Many trips drive the same route (like real
+ * commutes) and every route has fixed blackout zones (a tunnel, a basement car park) where
+ * GPS is lost, with drop-offs inside them, so routing questions repeat between trips and the
+ * cache has something realistic to chew on.
  *
- * A trip: about 3400 seconds long with a ping every 2 seconds (about 1700 pings, about 1500 once
- * the blackout zones have swallowed their share), then mess
- * is added the way real devices do it:
- *   - 2% of pings are sent twice
- *   - 1% have terrible accuracy
- *   - 30% of trips get a burst of three bad fixes 9 km away
- *   - 5% of trips have pings from before the trip started
- *   - the whole list arrives in random order
+ * A trip is about 3400 s with a ping every 2 s (~1700 pings, ~1500 after the blackouts), then
+ * messed up the way devices do: 2% of pings sent twice, 1% terrible accuracy, 30% of trips
+ * get a burst of three bad fixes 9 km away, 5% have pings from before the trip started, and
+ * the whole list arrives in random order.
  */
 public class SyntheticTrips {
 
@@ -38,7 +34,7 @@ public class SyntheticTrips {
     private static final double METERS_PER_DEGREE = 111_195.08;
     private static final Instant BASE_TIME = Instant.parse("2026-03-01T06:00:00Z");
 
-    /** A fixed path through the city with its blackout zones and the places employees get dropped. */
+    /** A fixed path through the city with its blackout zones and where employees get dropped. */
     record Route(int id, List<GeoPoint> waypoints, double[] cumulativeMeters, double lengthMeters,
                  double[][] blackouts, double[] stopDistances) {
 

@@ -4,8 +4,8 @@ import com.moveinsync.distance.engine.model.RuleConfig;
 import com.moveinsync.distance.engine.model.SegmentRule;
 
 /**
- * Two neighbouring points less than 70 seconds apart, at a speed the cab could really do:
- * the straight line is accurate enough and not worth a routing call.
+ * Under 70 s between two points, at a speed the cab could really do: the straight line is
+ * close enough and not worth a routing call.
  */
 public class ShortGapAerialRule extends AerialSegmentRule {
 

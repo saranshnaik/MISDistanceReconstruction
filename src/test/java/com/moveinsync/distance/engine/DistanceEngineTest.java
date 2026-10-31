@@ -29,9 +29,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 /**
- * The cab drives due north at 10 m/s (36 km/h) for 50 minutes, so the "true" distance is 30 km.
- * Pings arrive every 10 s except for a gap between 08:10 and 08:32, where two employees were
- * dropped (anchors). The stub provider says roads are 30% longer than the straight line.
+ * The cab drives due north at 10 m/s (36 km/h) for 50 minutes, so the true distance is 30 km.
+ * Pings every 10 s except a gap between 08:10 and 08:32 where two employees were dropped
+ * (anchors). The stub provider says roads are 30% longer than the straight line.
  */
 class DistanceEngineTest {
 
@@ -222,8 +222,6 @@ class DistanceEngineTest {
 
         assertEquals(engine.ruleVersion(), engine.compute(underpassTrip()).ruleVersion());
     }
-
-    // ---- routing cost per trip ----
 
     @Test
     void withoutACacheEveryGapIsOneProviderCall() {

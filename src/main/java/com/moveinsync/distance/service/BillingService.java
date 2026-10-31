@@ -22,11 +22,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Closing invoices and handling evidence that shows up after that.
- *
- * Rule of the house: a closed invoice is never edited. If the distance changes afterwards
- * (late pings, or a degraded estimate being replaced by the real answer) TripService stores a
- * signed adjustment, and this class just feeds it new evidence under the trip's row lock.
+ * Closing invoices and dealing with evidence that arrives afterwards. A closed invoice is
+ * never edited: if the distance changes later (late pings, or a degraded estimate replaced by
+ * the real answer) TripService stores a signed adjustment. This class just feeds in the new
+ * evidence under the trip's row lock.
  */
 @Service
 public class BillingService {
@@ -55,7 +54,7 @@ public class BillingService {
 
     /**
      * Close the invoice at the trip's current distance. Billing twice does nothing the second
-     * time. A trip that is not computed yet, or only estimated (DEGRADED), cannot be billed.
+     * time. Never-computed or DEGRADED trips can't be billed.
      */
     public TripView bill(String tenantId, String tripRef) {
         return tx.execute(status -> {
@@ -76,9 +75,9 @@ public class BillingService {
     }
 
     /**
-     * Add pings that arrived late and recompute. Readings we already have are ignored, so
-     * sending the same batch twice changes nothing. If the trip is billed, the change in
-     * distance comes out as a signed adjustment.
+     * Add pings that arrived late and recompute. Readings we already have are ignored, so the
+     * same batch twice changes nothing. On a billed trip the change comes out as a signed
+     * adjustment.
      */
     public TripView addLatePings(String tenantId, String tripRef, List<Ping> latePings) {
         return tx.execute(status -> {

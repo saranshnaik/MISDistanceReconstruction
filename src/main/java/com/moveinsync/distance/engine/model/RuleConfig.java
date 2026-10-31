@@ -1,8 +1,8 @@
 package com.moveinsync.distance.engine.model;
 
 /**
- * Every threshold the rules use, in one place. Defaults are the values from the case study;
- * "accuracy" is our own choice (see README assumptions).
+ * All the thresholds in one place. Defaults come from the case study; accuracy is my own
+ * pick (see README assumptions).
  */
 public record RuleConfig(
         double maxSpeedKmh,

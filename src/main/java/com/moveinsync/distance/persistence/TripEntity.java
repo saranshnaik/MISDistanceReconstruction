@@ -14,7 +14,7 @@ import java.time.Instant;
 
 /**
  * One trip of one tenant. Fields are private and only change through the methods below, so
- * the rules ("a billed trip stays billed") live in one place.
+ * "a billed trip stays billed" is enforced in one place.
  */
 @Entity
 @Table(name = "trip")
@@ -71,13 +71,13 @@ public class TripEntity {
         this.createdAt = createdAt;
     }
 
-    /** Remember the latest computation and whether it was a full answer or an estimate. */
+    /** Remember the latest computation and whether it was a real answer or an estimate. */
     public void useComputation(Long computationId, DistanceState state) {
         this.currentComputationId = computationId;
         this.distanceState = state;
     }
 
-    /** Close the invoice at the given distance. From now on only adjustments change the money. */
+    /** Close the invoice at this distance. After that only adjustments change the money. */
     public void markBilled(BigDecimal km, Long computationId) {
         this.billingState = BillingState.BILLED;
         this.billedKm = km;

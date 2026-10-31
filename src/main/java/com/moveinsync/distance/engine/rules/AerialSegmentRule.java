@@ -10,8 +10,8 @@ import java.time.Duration;
 import java.util.Optional;
 
 /**
- * Base for the rules that bill the straight-line distance. The measuring and the Segment
- * building are the same every time; subclasses only decide WHEN they apply and what to call it.
+ * Base for the rules that bill the straight line. Measuring and building the Segment is the
+ * same every time; subclasses only say when they apply and what to call it.
  */
 public abstract class AerialSegmentRule implements SegmentDistanceRule {
 

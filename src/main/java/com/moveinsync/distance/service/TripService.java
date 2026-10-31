@@ -36,11 +36,10 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * Stores a trip's evidence and keeps its distance up to date.
  *
- * Two promises:
- *  - Ingesting the same trip ref again changes nothing (it is idempotent per tenant).
- *  - Computing twice on the same input and rules does not even run the engine twice: the
- *    last saved computation is returned. A DEGRADED computation never counts as "same",
- *    so asking again after the provider recovered gives the real answer.
+ * Ingesting the same trip ref again changes nothing (idempotent per tenant), and computing
+ * twice on the same input and rules doesn't run the engine twice, it returns the last saved
+ * computation. A DEGRADED one never counts as "same", so asking again after the provider
+ * recovered gives the real answer.
  *
  * Every lookup carries the tenant id. A computation holds a row lock on the trip, so two
  * recomputes of one trip (even on two servers) happen one after the other.
@@ -76,17 +75,17 @@ public class TripService {
         this.tx = new TransactionTemplate(transactionManager);
     }
 
-    /** Save the trip if it is new, then make sure it has an up-to-date distance. */
+    /** Save the trip if it's new, then make sure it has an up-to-date distance. */
     public TripView ingest(String tenantId, String tripRef, TripEvidence evidence) {
         try {
             tx.executeWithoutResult(status -> createIfAbsent(tenantId, tripRef, evidence));
         } catch (DataIntegrityViolationException e) {
-            // another request saved the same trip a moment earlier: that is fine, use theirs
+            // someone saved the same trip a moment ago, fine, use theirs
         }
         return compute(tenantId, tripRef);
     }
 
-    /** Run (or reuse) the computation for a trip. Also what "recompute" means. */
+    /** Run (or reuse) the computation for a trip. This is also what "recompute" means. */
     public TripView compute(String tenantId, String tripRef) {
         return tx.execute(status -> {
             TripEntity trip = trips.findForUpdate(tenantId, tripRef).orElseThrow(TripNotFoundException::new);
@@ -95,11 +94,9 @@ public class TripService {
     }
 
     /**
-     * The computation itself, for callers that already hold the trip's row lock.
-     *
-     * If the trip is already billed and this run gives a real (non-degraded) answer that differs
-     * from what has been billed so far, the difference is stored as a signed adjustment. The
-     * closed invoice itself is never edited.
+     * The computation itself, for callers that already hold the row lock. If the trip is billed
+     * and this run gives a real answer that differs from what has been billed so far, the
+     * difference becomes a signed adjustment. The closed invoice is never edited.
      */
     TripView computeLocked(TripEntity trip, String reason) {
         TripEvidence evidence = loadEvidence(trip);
@@ -133,7 +130,7 @@ public class TripService {
         }
     }
 
-    /** What the customer has been charged for so far: the closed invoice plus all adjustments. */
+    /** What the customer has been charged so far: the closed invoice plus all adjustments. */
     private BigDecimal totalBilled(TripEntity trip) {
         BigDecimal total = trip.getBilledKm();
         for (BillingAdjustmentEntity adjustment : adjustments.findByTripIdOrderByIdAsc(trip.getId())) {
@@ -160,8 +157,8 @@ public class TripService {
     }
 
     /**
-     * A rider's view: only trips they were part of. Any other trip, including one that does not
-     * exist, gives the same "not found", so a rider cannot probe for other people's trips.
+     * A rider's view: only trips they were part of. Any other trip, including one that doesn't
+     * exist, gives the same "not found".
      */
     public TripView getForEmployee(String tenantId, String tripRef, String employeeRef) {
         return tx.execute(status -> {
@@ -173,7 +170,7 @@ public class TripService {
         });
     }
 
-    /** The line-by-line explanation of the latest computation. */
+    /** Line-by-line explanation of the latest computation. */
     public List<SegmentView> segments(String tenantId, String tripRef) {
         String stored = tx.execute(status -> {
             TripEntity trip = trips.findByTenantIdAndTripRef(tenantId, tripRef).orElseThrow(TripNotFoundException::new);
@@ -203,7 +200,7 @@ public class TripService {
         }
         stops.saveAll(stopRows);
 
-        // the same reading sent twice in one payload is stored once
+        // same reading twice in one payload gets stored once
         Set<PingKey> seen = new HashSet<>();
         List<PingEntity> pingRows = new ArrayList<>();
         for (Ping ping : evidence.pings()) {
@@ -235,7 +232,7 @@ public class TripService {
                 json.writeValueAsString(views), clock.instant());
     }
 
-    /** What makes two readings "the same" for storage: when, and where. */
+    /** What makes two readings "the same" for storage: when and where. */
     private record PingKey(Instant time, double lat, double lon) {
         PingKey(Ping ping) {
             this(ping.time(), ping.point().lat(), ping.point().lon());

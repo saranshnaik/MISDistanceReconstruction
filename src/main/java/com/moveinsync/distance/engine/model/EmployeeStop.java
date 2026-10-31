@@ -4,15 +4,10 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * One employee's milestone on a trip. Everything except the ref, rider type and event can be
- * null: devices and apps often fail to report a location or time.
- *
- * @param actualPoint  where the driver marked the pickup/drop/no-show
- * @param actualTime   when the driver marked it
- * @param plannedPoint where the roster says it should happen (planned riders)
- * @param plannedTime  when the roster says it should happen (planned riders)
- * @param homePoint    the home address on the rider's profile (ad-hoc riders)
- * @param signInTime   when the ad-hoc rider signed in (ad-hoc riders)
+ * One employee's milestone on a trip. Apart from ref, rider type and event everything can be
+ * null, since devices and apps often don't send a location or time. Planned riders carry a
+ * planned point/time from the roster, ad-hoc riders a home point and sign-in time from the
+ * profile; actual is what the driver marked.
  */
 public record EmployeeStop(
         String employeeRef,

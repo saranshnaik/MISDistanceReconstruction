@@ -4,8 +4,8 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * One point on the rebuilt track: either a cleaned GPS ping or an anchor we added.
- * {@code ref} says who the anchor belongs to (an employee ref, or "OFFICE"); pings have none.
+ * A point on the rebuilt track, either a cleaned ping or an anchor. ref is the employee ref
+ * or "OFFICE" for anchors, null for pings.
  */
 public record TrackPoint(Instant time, GeoPoint point, PointSource source, String ref) {
 

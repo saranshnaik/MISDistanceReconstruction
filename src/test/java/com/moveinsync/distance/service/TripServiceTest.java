@@ -34,8 +34,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 /**
- * The service manages its own transactions, so these tests are NOT @Transactional: they hit the
- * real commit and lock behaviour. Each test uses a fresh trip ref so they do not disturb each other.
+ * The service manages its own transactions, so these tests are NOT @Transactional and hit the
+ * real commit and lock behaviour. Each test uses a fresh trip ref so they don't disturb each
+ * other.
  */
 @SpringBootTest
 class TripServiceTest {
@@ -61,7 +62,9 @@ class TripServiceTest {
         provider.setDown(false);
     }
 
-    /** Each trip ref drives along its own stretch of map, so the shared route cache cannot leak between tests. */
+    /**
+     * Each trip ref drives along its own stretch of map, so the shared route cache can't leak between tests.
+     */
     private static GeoPoint originFor(String ref) {
         double eastShift = (Math.abs(ref.hashCode()) % 20_000) * 0.002;
         return new GeoPoint(ORIGIN.lat(), ORIGIN.lon() + eastShift);

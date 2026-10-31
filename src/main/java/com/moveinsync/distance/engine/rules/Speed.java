@@ -9,8 +9,8 @@ public final class Speed {
     }
 
     /**
-     * km/h for covering {@code meters} in {@code durationMs}. Two points at the same instant
-     * are fine if they are in the same place (speed 0); if they are apart the speed is infinite.
+     * km/h for {@code meters} in {@code durationMs}. Same instant and same place is speed 0;
+     * same instant but apart is infinite.
      */
     public static double kmh(double meters, long durationMs) {
         if (meters == 0) {

@@ -12,7 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
-/** An employee's pickup / drop / no-show on a trip, stored the way the engine reads it. */
+/** An employee's pickup / drop / no-show, stored the way the engine reads it. */
 @Entity
 @Table(name = "trip_stop")
 public class TripStopEntity {

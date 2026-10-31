@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * No cache, no batching: one provider request per gap. This is the "before" picture when we
- * compare provider calls with and without caching, and the simplest resolver for tests.
+ * No cache, no batching: one provider request per gap. It is the "before" side of the
+ * with/without caching comparison, and the simplest resolver for tests.
  */
 public class DirectRouteResolver implements RouteResolver {
 

@@ -1,14 +1,9 @@
 package com.moveinsync.distance.engine.model;
 
 /**
- * The stretch between two neighbouring points of the track, and how much of it we bill.
- * Distances are whole millimetres so that adding segments up never drifts.
- *
- * @param durationMs time between the two points
- * @param aerialMm   straight-line distance
- * @param routedMm   driving distance from the routing provider, or null if none was asked for
- * @param billedMm   what actually counts towards the bill (0 for rejected segments)
- * @param rule       the rule that decided billedMm
+ * The stretch between two neighbouring track points and what we bill for it. Whole
+ * millimetres so sums never drift. routedMm is null when no route was asked for, billedMm is 0
+ * for rejected segments, and rule says which rule decided.
  */
 public record Segment(
         TrackPoint from,

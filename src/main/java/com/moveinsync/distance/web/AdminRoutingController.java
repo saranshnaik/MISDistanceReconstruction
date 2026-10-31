@@ -9,9 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Admin-only controls for the simulated routing provider, so an outage can be staged on demand
- * (this is how the failure scenario is shown live in the demo). With a real provider these
- * endpoints would not exist.
+ * Admin-only switch for the simulated provider, so an outage can be staged on demand (that's
+ * how the failure scenario is shown live). With a real provider these endpoints wouldn't exist.
  */
 @RestController
 @RequestMapping("/api/admin/routing")

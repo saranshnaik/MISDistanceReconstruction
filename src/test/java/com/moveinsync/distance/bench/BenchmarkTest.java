@@ -27,17 +27,13 @@ import org.junit.jupiter.api.Test;
 
 /**
  * The scale test from the case study: 10,000 synthetic trips of about 1,500 pings each.
+ * Skipped in the normal run since it takes a minute or two; run it with
+ * ./mvnw test -Pbenchmark. The report is printed and written to target/benchmark-report.md.
  *
- * Not part of the normal test run (it takes a minute or two). Run it with:
- *     ./mvnw test -Pbenchmark
- * The report is printed and also written to target/benchmark-report.md.
- *
- * What is measured, and what is not:
- *  - Trips are generated one at a time and thrown away, so memory reflects the engine, not
- *    ten thousand trips held at once. Generation time is NOT in the latency numbers.
- *  - The routing provider here answers instantly. Real providers take tens of milliseconds
- *    per call, so the report also shows calls x an assumed 30 ms. That column is arithmetic,
- *    not a measurement.
+ * Trips are generated one at a time and thrown away, so memory reflects the engine and not
+ * ten thousand trips held at once, and generation time is not in the latency numbers. The
+ * provider here answers instantly; real ones take tens of ms per call, so the report also
+ * shows calls x an assumed 30 ms. That column is arithmetic, not a measurement.
  */
 @Tag("benchmark")
 class BenchmarkTest {
@@ -91,8 +87,6 @@ class BenchmarkTest {
         // a very generous ceiling, only to catch an accidental O(n^2)
         assertTrue(cacheOn.wallMillis() < 5 * 60_000L, "took " + cacheOn.wallMillis() + " ms");
     }
-
-    // ---- running a scenario ----
 
     private interface ResolverFactory {
         RouteResolver create(SimulatedRoutingProvider provider);
@@ -173,8 +167,6 @@ class BenchmarkTest {
         return new Result(name, threads, wallMillis, tripNanos, provider.callCount(), routeRequests.get(),
                 cacheHits.get(), totalMm.get(), (int) degraded.get(), peakHeap.get(), pings.get());
     }
-
-    // ---- the report ----
 
     private String report(List<Result> results, int cores) throws IOException {
         StringBuilder out = new StringBuilder();

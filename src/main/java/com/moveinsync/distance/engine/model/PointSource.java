@@ -1,8 +1,8 @@
 package com.moveinsync.distance.engine.model;
 
 /**
- * Where a point on the track came from. It ends up on every segment in the output, so when a
- * vendor asks "why does this km exist" we can say which point it was measured from.
+ * Where a track point came from. It is on every output segment, so "why does this km
+ * exist" can be answered.
  */
 public enum PointSource {
     GPS_PING,

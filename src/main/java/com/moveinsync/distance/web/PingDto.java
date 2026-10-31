@@ -5,7 +5,7 @@ import com.moveinsync.distance.engine.model.Ping;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 
-/** One GPS reading. A missing accuracy counts as "cannot be trusted" and the ping is dropped. */
+/** One GPS reading. A missing accuracy means "can't be trusted" and the ping is dropped. */
 public record PingDto(@NotNull Instant time, @NotNull Double lat, @NotNull Double lon, Double accuracyM) {
 
     Ping toEngine() {

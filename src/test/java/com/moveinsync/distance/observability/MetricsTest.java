@@ -80,8 +80,6 @@ class MetricsTest {
         return "T-" + UUID.randomUUID();
     }
 
-    // ---- counters that move as work is done ----
-
     @Test
     void computingATripCountsSegmentsByRuleRoutingAndTime() throws Exception {
         double routedBefore = counter("distance.segments", "rule", "ROUTED");
@@ -159,8 +157,6 @@ class MetricsTest {
         assertEquals(lagSamplesBefore + filler.size(), lagSamplesAfter);
     }
 
-    // ---- the backlog gauges ----
-
     @Test
     void anOutageShowsUpAsABacklogWithAnAgeAndRecoveryDrainsIt() throws Exception {
         double failuresBefore = counter("distance.routing.failures");
@@ -188,8 +184,6 @@ class MetricsTest {
         assertTrue(registry.find("distance.routing.circuit.opened").functionCounter() != null);
         assertTrue(gauge("distance.routing.cache.size") >= 0);
     }
-
-    // ---- the endpoint ----
 
     @Test
     void thePrometheusEndpointIsForAdminsOnlyAndLeaksNoTripOrTenantNames() throws Exception {

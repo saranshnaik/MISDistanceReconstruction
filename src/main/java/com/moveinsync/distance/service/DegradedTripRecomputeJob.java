@@ -12,17 +12,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * Heals trips that were only estimated because routing was down.
+ * Heals trips that were only estimated because routing was down. Every few seconds it takes
+ * the oldest DEGRADED trips and recomputes them, with a few brakes so it can't make a bad day
+ * worse: it does nothing while the circuit breaker is still refusing, it stops at the first
+ * trip that comes back DEGRADED again (provider still unwell), and it does 100 per run so a
+ * long outage drains in steady steps.
  *
- * Every few seconds it looks for DEGRADED trips (oldest first) and recomputes them. Three
- * things keep it from making a bad day worse:
- *  - while the circuit breaker is still refusing requests it does nothing at all
- *  - the first trip that comes back DEGRADED again means the provider is still unwell, so it
- *    stops there instead of burning through the whole list
- *  - it works on 100 trips per run, so a long outage drains in steady steps afterwards
- *
- * Several servers can run this at once: TripService recomputes under the trip's row lock, so
- * the second one just finds the work already done.
+ * Several servers can run it at once; TripService recomputes under the trip's row lock, so
+ * the second one just finds the work done.
  */
 @Component
 public class DegradedTripRecomputeJob {
@@ -47,7 +44,7 @@ public class DegradedTripRecomputeJob {
         runOnce();
     }
 
-    /** One pass. Returns how many trips were brought back to OK. */
+    /** One pass. Returns how many trips went back to OK. */
     public int runOnce() {
         if (breaker.isRefusingRequests()) {
             log.debug("recompute skipped: routing circuit is open");
@@ -68,7 +65,7 @@ public class DegradedTripRecomputeJob {
                 recovered++;
                 metrics.recompute("recovered", 1);
             } catch (RuntimeException e) {
-                // one bad trip must not block the rest; keep the log free of trip data
+                // one bad trip shouldn't block the rest, and no trip data in the log
                 metrics.recompute("failed", 1);
                 log.warn("recompute failed for one trip: {}", e.getClass().getSimpleName());
             }

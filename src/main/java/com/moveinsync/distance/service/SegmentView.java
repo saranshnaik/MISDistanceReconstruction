@@ -6,9 +6,7 @@ import com.moveinsync.distance.engine.model.TrackPoint;
 import java.time.Instant;
 
 /**
- * One line of the explanation a vendor can read: which two points, how far, and which rule
- * decided it. This is what gets stored and returned.
- *
+ * One line of the explanation a vendor can read: which two points, how far, which rule.
  * A rider's home address is personal data, so points that came from a home location carry no
  * coordinates here (the source still says where they came from).
  */

@@ -17,15 +17,14 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Builds the anchor points that plug the holes in the GPS track: the places where we know the
- * cab must have been (employee pickups/drops, no-shows, the office), even if no ping says so.
- *
- * A candidate (point + time) is only usable when the point is a real coordinate and the time
- * falls inside the trip window. If it is not usable we try the next fallback.
+ * Builds the extra points that cover the holes in the GPS track: where the cab must have been
+ * (pickups, drops, no-shows, the office) even when no ping says so.
+ * A point only counts if it is a real coordinate and its time is inside the trip window,
+ * otherwise we fall through to the next option.
  */
 public class AnchorBuilder {
 
-    /** Fixed order so two anchors at the same instant always end up in the same sequence. */
+    /** Fixed order, so two anchors at the same instant always land in the same sequence. */
     private static final Comparator<TrackPoint> ANCHOR_ORDER =
             Comparator.comparing(TrackPoint::time)
                     .thenComparing(TrackPoint::source)
@@ -47,7 +46,7 @@ public class AnchorBuilder {
 
         for (EmployeeStop stop : trip.stops()) {
             if (stop.event() == StopEvent.NO_SHOW && !config.includeNoShows()) {
-                continue; // flag is off: the cab never really went there, so nothing to add
+                continue; // flag off: nothing to add for a no-show
             }
             Optional<TrackPoint> anchor = stop.event() == StopEvent.NO_SHOW
                     ? noShowAnchor(stop, trip)
@@ -66,10 +65,8 @@ public class AnchorBuilder {
     }
 
     /**
-     * Fallback order for someone who actually travelled:
-     *  1. the pickup/drop the driver recorded
-     *  2. ad-hoc rider: profile home location at sign-in time
-     *     planned rider: planned location at planned time
+     * Someone who actually rode: the driver's pickup/drop first, then home + sign-in time for
+     * ad-hoc riders or planned location + planned time for roster riders.
      */
     private Optional<TrackPoint> employeeAnchor(EmployeeStop stop, TripEvidence trip) {
         if (isUsable(stop.actualPoint(), stop.actualTime(), trip)) {
@@ -89,9 +86,8 @@ public class AnchorBuilder {
     }
 
     /**
-     * A no-show means the cab went to the pickup spot and the employee never turned up.
-     * We use the spot where the driver marked the no-show, or the planned spot if that
-     * is not usable. Only called when the includeNoShows flag is on.
+     * Cab went to the spot and the employee never showed. Use where the driver marked it,
+     * or the planned spot if that is unusable. Only called when includeNoShows is on.
      */
     private Optional<TrackPoint> noShowAnchor(EmployeeStop stop, TripEvidence trip) {
         if (isUsable(stop.actualPoint(), stop.actualTime(), trip)) {
@@ -106,10 +102,9 @@ public class AnchorBuilder {
     }
 
     /**
-     * The office is where a LOGIN trip ends and where a LOGOUT trip starts.
-     * We trust the device's own start/end point only if it is within officeRadiusM (400 m) of
-     * the planned office. If it is missing, invalid or further away (cab stopped at the gate
-     * road, bad fix...) we use the planned office location at the same trip start/end time.
+     * The office is where a LOGIN trip ends and a LOGOUT trip starts. The device's own point is
+     * trusted only within officeRadiusM (400 m) of the office; otherwise (missing, invalid, cab
+     * stopped down the road) we use the office itself at the trip start/end time.
      */
     private TrackPoint officeAnchor(TripEvidence trip) {
         boolean tripEndsAtOffice = trip.type() == TripType.LOGIN;

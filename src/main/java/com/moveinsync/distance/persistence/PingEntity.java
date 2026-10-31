@@ -24,7 +24,7 @@ public class PingEntity {
     private Instant recordedAt;
     private double lat;
     private double lon;
-    // explicit name: the default snake_case rule would turn a trailing capital M into "accuracym"
+    // explicit name, otherwise the snake_case default turns accuracyM into "accuracym"
     @Column(name = "accuracy_m")
     private double accuracyM;
     private Instant receivedAt;

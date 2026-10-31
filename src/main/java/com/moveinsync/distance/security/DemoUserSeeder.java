@@ -12,11 +12,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /**
- * Creates demo accounts on start-up so the API can be tried straight away: for two tenants
- * (acme and globex) one admin, one operator and one employee. DEMO ONLY: switch it off with
- * app.seed-demo-users=false and manage real accounts yourself.
- *
- * Existing accounts are left alone, so restarting never resets a password.
+ * Creates demo accounts at start-up so the API can be tried straight away: for acme and
+ * globex, one admin, one operator, one employee. DEMO ONLY, turn it off with
+ * app.seed-demo-users=false. Existing accounts are left alone, so a restart never resets a
+ * password.
  */
 @Component
 public class DemoUserSeeder implements ApplicationRunner {
@@ -59,7 +58,7 @@ public class DemoUserSeeder implements ApplicationRunner {
             users.saveAndFlush(new AppUserEntity(username, passwordEncoder.encode(password), role, tenant, employeeRef));
             return 1;
         } catch (DataIntegrityViolationException e) {
-            return 0; // another instance created it a moment earlier
+            return 0; // another instance got there first
         }
     }
 }

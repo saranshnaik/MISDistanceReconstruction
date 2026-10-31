@@ -6,18 +6,11 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * Everything the engine knows about one trip's distance.
- *
- * @param totalMm         sum of billedMm over all segments, exact
- * @param billableKm      totalMm in km, rounded half-up to 2 decimals (the only rounding of km)
- * @param naiveKm         what a plain "add up the distance between pings" would have said,
- *                        so the effect of the gap filling is visible
- * @param skippedAnchors  milestones that had no usable location or time
- * @param routing         routing requests / provider calls / cache hits for this run. This is
- *                        about cost, not about the answer: the same trip costs less on a warm
- *                        cache but its segments and kilometres stay exactly the same.
- * @param status          DEGRADED if routing was down and some gaps are only estimates
- * @param ruleVersion     which rules and thresholds produced this
+ * What the engine knows about one trip's distance. totalMm is the exact sum of billedMm;
+ * billableKm is that in km, half-up to 2 decimals (the only km rounding). naiveKm is the plain
+ * "add up the pings" answer so the effect of gap filling is visible. routing is about cost,
+ * not the answer: a warm cache costs less but gives identical segments and km. status is
+ * DEGRADED when routing was down and some gaps are only estimates.
  */
 public record TripDistanceResult(
         List<Segment> segments,

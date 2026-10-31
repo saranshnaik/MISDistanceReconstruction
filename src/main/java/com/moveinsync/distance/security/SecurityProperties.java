@@ -3,10 +3,8 @@ package com.moveinsync.distance.security;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Settings under "security.*" in application.properties.
- *
- * @param jwt           the signing secret and token lifetime
- * @param bcryptStrength cost factor for password hashing (higher is slower and safer)
+ * Settings under "security.*": the JWT secret and lifetime, and the bcrypt cost factor
+ * (higher is slower and safer).
  */
 @ConfigurationProperties(prefix = "security")
 public record SecurityProperties(Jwt jwt, int bcryptStrength) {

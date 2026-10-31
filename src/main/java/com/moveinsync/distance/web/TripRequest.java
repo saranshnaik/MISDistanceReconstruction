@@ -12,7 +12,7 @@ import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
 
-/** The body of POST /api/trips: all the evidence for one trip. */
+/** Body of POST /api/trips: all the evidence for one trip. */
 public record TripRequest(
         @NotBlank @Size(max = 128) String tripRef,
         @NotNull TripType type,

@@ -16,20 +16,19 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.stereotype.Component;
 
 /**
- * Every number an on-call engineer would reach for at 3 AM, recorded in one place.
+ * Every number someone on call would want at 3 AM, recorded in one place.
  *
- * Tags only ever come from fixed lists (rules, drop reasons, outcomes). Never a trip ref, a
- * tenant, an employee or a coordinate: metric labels are stored forever and shown to everyone
- * with dashboard access.
+ * Tags only come from fixed lists (rules, drop reasons, outcomes), never a trip ref, tenant,
+ * employee or coordinate: labels are kept forever and everyone with dashboard access sees them.
  *
- * What answers which question:
- *   "is it slow?"            distance.compute (timer, by status)
- *   "is the data bad?"       distance.pings.dropped by reason, distance.segments by rule (REJECTED_*)
- *   "is routing hurting?"    distance.routing.* (requests, calls, hits, failures, circuit state)
- *   "are we falling behind?" distance.trips.degraded (queue depth), ...oldest.age.seconds (lag)
- *   "are retries working?"   distance.recompute by outcome
- *   "is money moving?"       distance.billing.*
- *   "are requests failing?"  http.server.requests (Spring's own, by status)
+ * Where to look:
+ *   slow?             distance.compute (timer, by status)
+ *   bad data?         distance.pings.dropped by reason, distance.segments by rule (REJECTED_*)
+ *   routing hurting?  distance.routing.* (requests, calls, hits, failures, circuit state)
+ *   falling behind?   distance.trips.degraded (queue depth), ...oldest.age.seconds (lag)
+ *   retries working?  distance.recompute by outcome
+ *   money moving?     distance.billing.*
+ *   requests failing? http.server.requests (Spring's own)
  */
 @Component
 public class EngineMetrics {
@@ -55,7 +54,7 @@ public class EngineMetrics {
         dropped("teleport", cleaning.teleports());
         add("distance.anchors.skipped", "milestones with no usable location or time", result.skippedAnchors());
 
-        // counted locally first: a trip can have a thousand segments
+        // count locally first, a trip can have thousands of segments
         Map<SegmentRule, Integer> perRule = new EnumMap<>(SegmentRule.class);
         for (Segment segment : result.segments()) {
             perRule.merge(segment.rule(), 1, Integer::sum);
@@ -83,7 +82,7 @@ public class EngineMetrics {
         add("distance.billing.closed", "invoices closed", 1);
     }
 
-    /** A ping we had not seen before arrived after the trip was already stored. */
+    /** A ping we hadn't seen arrived after the trip was already stored. */
     public void latePing(long lagSeconds) {
         add("distance.pings.late", "pings accepted after the trip was stored", 1);
         DistributionSummary.builder("distance.ping.lag.seconds").baseUnit("seconds")

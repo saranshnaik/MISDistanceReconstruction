@@ -17,7 +17,7 @@ class TeleportFilterTest {
     private static final Instant END = Instant.parse("2026-03-01T09:00:00Z");
     private static final double BASE_LAT = 12.90;
     private static final double LON = 77.60;
-    /** Metres in one degree of latitude on the sphere used by Haversine. */
+    /** Metres in one degree of latitude on the sphere Haversine uses. */
     private static final double METERS_PER_DEGREE = 111_195.08;
 
     private static Ping pingAt(int secondsAfterStart, double metersNorth) {
@@ -37,7 +37,7 @@ class TeleportFilterTest {
         return total;
     }
 
-    /** A cab moving north at 4 m/s (about 14 km/h), one ping every 5 seconds. */
+    /** A cab moving north at 4 m/s (about 14 km/h), a ping every 5 seconds. */
     private static List<Ping> steadyDrive(int count) {
         List<Ping> pings = new ArrayList<>();
         for (int i = 0; i < count; i++) {

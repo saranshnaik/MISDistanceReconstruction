@@ -1,6 +1,6 @@
 package com.moveinsync.distance.engine.routing;
 
-/** The routing provider could not answer (down, timed out, rate limited). */
+/** Provider couldn't answer (down, timed out, rate limited). */
 public class RoutingUnavailableException extends RuntimeException {
 
     public RoutingUnavailableException(String message) {

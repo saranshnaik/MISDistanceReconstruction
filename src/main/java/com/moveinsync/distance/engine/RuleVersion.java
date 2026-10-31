@@ -7,15 +7,14 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
 /**
- * A short label saying exactly which rules produced a number, stored next to every result.
- *
- * It has two parts: RULE_REVISION, which a developer bumps by hand whenever the logic or the
- * ORDER of the rules changes, and a hash of every threshold in RuleConfig. So changing 120 km/h
- * to 100 km/h without touching the revision still produces a different version string.
+ * Label saying which rules produced a number, stored next to every result. RULE_REVISION is
+ * bumped by hand when the logic or rule order changes, and a hash of all the RuleConfig
+ * thresholds is added, so changing 120 km/h to 100 km/h without touching the revision still
+ * gives a new version string.
  */
 public final class RuleVersion {
 
-    /** Bump this when the rule logic or its order changes. */
+    /** Bump when the rule logic or its order changes. */
     static final int RULE_REVISION = 1;
 
     private RuleVersion() {

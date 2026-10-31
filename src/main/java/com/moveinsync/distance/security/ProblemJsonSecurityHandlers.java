@@ -11,10 +11,9 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
 /**
- * 401 and 403 are decided inside the security filter chain, before any controller runs, so the
- * normal exception handler never sees them. These write the same problem-details body by hand.
- *
- * The reason a token was refused (expired, wrong signature...) is deliberately NOT shown.
+ * 401 and 403 are decided inside the security filter chain before any controller runs, so
+ * the normal exception handler never sees them; these write the same problem-details body by
+ * hand. Why a token was refused (expired, bad signature...) is deliberately not shown.
  */
 public class ProblemJsonSecurityHandlers implements AuthenticationEntryPoint, AccessDeniedHandler {
 

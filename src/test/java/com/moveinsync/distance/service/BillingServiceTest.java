@@ -31,7 +31,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 /**
  * The cab drives due north at 10 m/s, so a full 3000 s trip is exactly 30 km. Each test trip
- * gets its own stretch of map so the shared route cache cannot leak between tests.
+ * gets its own stretch of map so the shared route cache can't leak between tests.
  */
 @SpringBootTest
 class BillingServiceTest {
@@ -79,12 +79,10 @@ class BillingServiceTest {
                 originFor(ref), pings, stops);
     }
 
-    /** Pings for the first 40 minutes only: the last 10 minutes have not reached us yet. */
+    /** Pings for the first 40 minutes only; the last 10 haven't reached us yet. */
     private TripView ingestShortTrip(String ref) {
         return trips.ingest("acme", ref, trip(ref, pingsBetween(ref, 0, 2400), List.of()));
     }
-
-    // ---- closing the invoice ----
 
     @Test
     void billingFreezesTheCurrentDistanceOnTheInvoice() {
@@ -125,8 +123,6 @@ class BillingServiceTest {
 
         assertEquals(BillingState.BILLED, billing.bill("acme", ref).billingState());
     }
-
-    // ---- late pings ----
 
     @Test
     void latePingsAfterBillingGiveAPositiveSignedAdjustmentAndLeaveTheInvoiceAlone() {
@@ -219,8 +215,6 @@ class BillingServiceTest {
         assertEquals(recovered.billableKm(), recovered.finalBilledKm());
     }
 
-    // ---- who may touch it ----
-
     @Test
     void anotherTenantCannotBillOrAddPingsOrReadAdjustments() {
         String ref = newRef();
@@ -231,8 +225,6 @@ class BillingServiceTest {
         assertThrows(TripNotFoundException.class, () -> billing.summary("globex", ref));
         assertEquals(BillingState.UNBILLED, trips.get("acme", ref).billingState());
     }
-
-    // ---- concurrency ----
 
     @Test
     void twelveRequestsSendingTheSameLatePingsAtOnceProduceExactlyOneAdjustment() throws Exception {

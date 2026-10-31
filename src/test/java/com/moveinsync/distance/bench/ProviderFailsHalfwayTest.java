@@ -21,17 +21,13 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
- * Failure injection at scale: the routing provider dies halfway through a big run.
+ * Failure injection at scale: the provider dies halfway through a big run. Nothing may be
+ * lost or throw, trips that need no routing are unaffected, trips that do are marked
+ * DEGRADED, and the breaker stops further calls once it trips. After recovery, recomputing
+ * the degraded trips must give EXACTLY what a no-outage run gives, millimetre for millimetre.
  *
- * What must hold:
- *  1. Nothing is lost and nothing throws: every trip still gets an answer.
- *  2. Trips that need no routing are unaffected; trips that do are marked DEGRADED.
- *  3. The circuit breaker protects the provider: after it trips, no more calls are attempted.
- *  4. When the provider is back, recomputing the degraded trips gives EXACTLY the answer a
- *     run with no outage would have given, millimetre for millimetre.
- *
- * The routing here is uncached on purpose: with a warm cache an outage can go unnoticed,
- * which is nice for production but would make this test prove nothing.
+ * Routing is uncached here on purpose: with a warm cache an outage can go unnoticed, which
+ * is nice in production but would make this test prove nothing.
  */
 class ProviderFailsHalfwayTest {
 
@@ -92,9 +88,9 @@ class ProviderFailsHalfwayTest {
         }
         long callsDuringOutage = provider.callCount() - callsWhenItDied;
 
-        // 1. nothing lost
+        // nothing lost
         assertEquals(trips, answered);
-        // 2. exactly the trips that needed routing, after the failure, were degraded
+        // exactly the trips that needed routing after the failure were degraded
         int expectedDegraded = 0;
         for (int i = half; i < trips; i++) {
             if (needsRouting[i]) {
@@ -103,12 +99,12 @@ class ProviderFailsHalfwayTest {
         }
         assertEquals(expectedDegraded, degraded.size());
         assertTrue(degraded.size() > (trips - half) * 0.9, "most trips need routing, got " + degraded.size());
-        // 3. the breaker stopped the hammering: only the first few attempts reached the dead provider
+        // the breaker stopped the hammering: only the first few attempts reached the dead provider
         assertEquals(State.OPEN, breaker.state());
         assertEquals(1, breaker.timesOpened());
         assertEquals(BREAKER_THRESHOLD, callsDuringOutage, "calls attempted while the provider was down");
 
-        // 4. recovery: provider is back and the breaker's wait is over; recompute what was degraded
+        // recovery: provider is back and the breaker's wait is over, recompute what was degraded
         provider.setDown(false);
         clock.advance(Duration.ofSeconds(31));
         for (int i : degraded) {

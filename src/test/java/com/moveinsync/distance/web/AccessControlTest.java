@@ -21,8 +21,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Who may do what. Accounts (all password demo-pass):
- *   acme-employee (employee E1), acme-operator, acme-admin, and the same for globex.
+ * Who may do what. All accounts use password demo-pass: acme-employee (employee E1),
+ * acme-operator, acme-admin, and the same for globex.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -71,8 +71,6 @@ class AccessControlTest {
 
     private static final Map<String, Object> ONE_LATE_PING = Map.of("pings", List.of(Map.of(
             "time", TripJson.isoAt(2999), "lat", 12.99, "lon", 77.62, "accuracyM", 5)));
-
-    // ---- roles ----
 
     @Test
     void anEmployeeCanOnlyReadTheirOwnTripSummary() throws Exception {
@@ -135,8 +133,6 @@ class AccessControlTest {
         assertEquals(403, call("acme-admin", HttpMethod.POST, "/api/trips/x/delete", null));
     }
 
-    // ---- tenants ----
-
     @Test
     void anotherTenantSeesNothingOnEveryEndpointNotEvenAForbiddenOrNotFoundHint() throws Exception {
         String ref = submitAcmeTrip();
@@ -175,8 +171,6 @@ class AccessControlTest {
 
         assertNotEquals(json.readTree(acme).get("computationId"), json.readTree(globex).get("computationId"));
     }
-
-    // ---- the demo outage switch ----
 
     @Test
     void anAdminCanStageAnOutageAndRecoverFromIt() throws Exception {

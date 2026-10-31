@@ -21,7 +21,7 @@ services:
       DB_URL: jdbc:postgresql://db:5432/distance
       DB_USER: distance
       DB_PASSWORD: distance
-      # development value only; set a real secret (32+ characters) anywhere else
+      # dev value only, use a real 32+ character secret anywhere else
       JWT_SECRET: ${JWT_SECRET:-compose-dev-secret-change-me-0123456789abcdef}
     depends_on:
       db:

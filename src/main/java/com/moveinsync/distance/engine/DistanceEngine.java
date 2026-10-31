@@ -29,24 +29,18 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * The whole pipeline for one trip, in a fixed order:
+ * One trip, start to finish: clean the pings, build anchors, merge into one track, price each
+ * neighbouring pair with the cheap rules, and send whatever is left (the real gaps) to the
+ * router in one go so it can dedupe, cache and batch. Then the routing policy accepts or
+ * rejects each answer, and the billed millimetres are added up and rounded to km once.
+ * If routing is down the gaps get an estimate and the trip is marked DEGRADED.
  *
- *  1. clean the pings
- *  2. build the anchors
- *  3. merge both into one time-ordered track
- *  4. price every pair of neighbouring points with the cheap rules (ShortGapAerial, then
- *     Parked). Whatever is left is a real gap.
- *  5. ask the RouteResolver for ALL the real gaps of the trip in one go, so it can dedupe,
- *     cache and batch, then let RoutedDistancePolicy accept or reject each answer.
- *     If routing is unavailable the gaps are estimated and the trip is marked DEGRADED.
- *  6. add up the billed millimetres and round to km once
- *
- * Plain Java, no Spring or database. The same TripEvidence and the same RuleConfig always give
- * the same segments and kilometres; the only outside input is the routing provider.
+ * No Spring, no database in here. Same TripEvidence + same RuleConfig gives the same result;
+ * the provider is the only outside input.
  */
 public class DistanceEngine {
 
-    /** Same instant? GPS first, then a fixed order, so the track never depends on input order. */
+    /** Same instant: GPS first, then a fixed order, so input order never matters. */
     private static final Comparator<TrackPoint> TRACK_ORDER =
             Comparator.comparing(TrackPoint::time)
                     .thenComparing(TrackPoint::source)
@@ -63,7 +57,7 @@ public class DistanceEngine {
     private final RouteResolver routeResolver;
     private final String ruleVersion;
 
-    /** One provider call per gap, no cache. Handy for tests and as the "before" baseline. */
+    /** One provider call per gap, no cache. Handy in tests and as the "before" number. */
     public DistanceEngine(RuleConfig config, RoutingProvider routingProvider) {
         this(config, new DirectRouteResolver(routingProvider));
     }
@@ -112,7 +106,7 @@ public class DistanceEngine {
                 }
                 usage = new RoutingUsage(questions.size(), resolution.providerCalls(), resolution.cacheHits());
             } catch (RoutingUnavailableException e) {
-                // Provider down (or circuit open): estimate the real gaps and flag the trip.
+                // provider down or circuit open: estimate the gaps and flag the trip
                 status = TripStatus.DEGRADED;
                 for (int i : needsRoute) {
                     segments[i] = routedPolicy.degradedEstimate(track.get(i), track.get(i + 1));
@@ -155,7 +149,9 @@ public class DistanceEngine {
         return points;
     }
 
-    /** Straight lines between consecutive cleaned pings: the "just add up the pings" answer. */
+    /**
+     * Straight lines between consecutive cleaned pings, i.e. the "just add up the pings" answer.
+     */
     private static long naiveMm(List<TrackPoint> pings) {
         long total = 0;
         for (int i = 1; i < pings.size(); i++) {

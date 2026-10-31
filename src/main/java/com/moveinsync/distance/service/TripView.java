@@ -9,9 +9,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * What we tell callers about a trip: its state and the latest computed distance.
- * billedKm is what the invoice said when it was closed and never changes; finalBilledKm is
- * billedKm plus every signed adjustment since (null while the trip is unbilled).
+ * What callers get to see about a trip. billedKm is what the invoice said when it closed and
+ * never changes; finalBilledKm is that plus every adjustment since (null while unbilled).
  */
 public record TripView(
         String tripRef,

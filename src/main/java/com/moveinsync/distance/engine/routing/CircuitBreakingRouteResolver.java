@@ -3,9 +3,9 @@ package com.moveinsync.distance.engine.routing;
 import java.util.List;
 
 /**
- * Puts a CircuitBreaker in front of any RouteResolver. While the circuit is open it throws
- * RoutingUnavailableException at once, without touching the provider, so a dead provider costs
- * neither money nor time. The engine turns that exception into a DEGRADED estimate.
+ * Puts a CircuitBreaker in front of any RouteResolver. While it is open we throw
+ * RoutingUnavailableException straight away without touching the provider, so a dead provider
+ * costs no money and no time. The engine turns that into a DEGRADED estimate.
  */
 public class CircuitBreakingRouteResolver implements RouteResolver {
 

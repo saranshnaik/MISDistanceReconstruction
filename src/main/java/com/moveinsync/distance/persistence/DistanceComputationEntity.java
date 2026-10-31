@@ -12,9 +12,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * One saved run of the engine for a trip: the answer, which input and rules produced it, what
- * routing cost, and every segment as JSON so a dispute can be answered line by line later.
- * Rows are only ever added, never edited.
+ * One saved engine run for a trip: the answer, the input and rules behind it, what routing
+ * cost, and every segment as JSON so a dispute can be answered line by line later. Rows are
+ * only ever added, never edited.
  */
 @Entity
 @Table(name = "distance_computation")

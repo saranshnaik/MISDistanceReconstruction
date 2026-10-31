@@ -26,10 +26,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Stateless token security: no sessions, no cookies. A client logs in once at
- * /api/auth/token, then sends "Authorization: Bearer <token>" on every call.
- * Tokens are signed with HS256; anything unsigned, tampered with, expired or issued by someone
- * else is refused before a controller is reached.
+ * Stateless token security, no sessions or cookies. Log in once at /api/auth/token, then send
+ * "Authorization: Bearer <token>". Tokens are HS256; unsigned, tampered, expired or
+ * someone-else's tokens are refused before a controller is reached.
  */
 @Configuration
 @EnableConfigurationProperties(SecurityProperties.class)
@@ -39,12 +38,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         ProblemJsonSecurityHandlers problemJson = new ProblemJsonSecurityHandlers();
         http
-                .csrf(csrf -> csrf.disable()) // no cookies are used, so there is nothing for CSRF to ride on
+                .csrf(csrf -> csrf.disable()) // no cookies, nothing for CSRF to ride on
                 .sessionManagement(sessions -> sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(requests -> requests
                         // public
                         .requestMatchers("/api/auth/token", "/actuator/health", "/actuator/health/**").permitAll()
-                        // riders may look at their own trip's summary (the service checks it is theirs)
+                        // riders can read their own trip (the service checks it's theirs)
                         .requestMatchers(HttpMethod.GET, "/api/trips/*").hasAnyRole("EMPLOYEE", "OPERATOR", "ADMIN")
                         // day-to-day operations
                         .requestMatchers(HttpMethod.POST, "/api/trips", "/api/trips/*/pings", "/api/trips/*/recompute")
@@ -56,7 +55,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/actuator/prometheus", "/actuator/metrics", "/actuator/metrics/**")
                                 .hasRole("ADMIN")
-                        // anything not listed above is closed until someone decides who may use it
+                        // anything not listed is closed until someone decides who may use it
                         .anyRequest().denyAll())
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint(problemJson)
@@ -68,7 +67,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /** The "role" claim becomes the Spring authority ROLE_ADMIN / ROLE_OPERATOR / ROLE_EMPLOYEE. */
+    /** The "role" claim becomes ROLE_ADMIN / ROLE_OPERATOR / ROLE_EMPLOYEE. */
     private JwtAuthenticationConverter authoritiesFromRole() {
         JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
         authorities.setAuthoritiesClaimName(JwtService.ROLE_CLAIM);
@@ -101,7 +100,7 @@ public class SecurityConfig {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(signingKey(properties))
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
-        // default checks (expiry, not-before) plus: it must be OUR token
+        // default checks (expiry, not-before) plus: must be OUR token
         OAuth2TokenValidator<Jwt> validator = new DelegatingOAuth2TokenValidator<>(
                 JwtValidators.createDefault(), JwtValidators.createDefaultWithIssuer(JwtService.ISSUER));
         decoder.setJwtValidator(validator);

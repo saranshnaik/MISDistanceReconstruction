@@ -12,9 +12,8 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
 /**
- * Creates the signed token a client sends with every request. The tenant and role are written
- * into it here, from the user's account, and are covered by the signature: they cannot be
- * changed by the client without the token failing verification.
+ * Creates the signed token a client sends with every request. Tenant and role go in here
+ * from the user's account and are covered by the signature, so the client can't change them.
  */
 @Service
 public class JwtService {

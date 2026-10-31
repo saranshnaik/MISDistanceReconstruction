@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** Same cab, same underpass as DistanceEngineTest, but now the routing provider is in trouble. */
+/** Same cab and underpass as DistanceEngineTest, but the routing provider is in trouble. */
 class DegradedModeTest {
 
     private static final Instant START = Instant.parse("2026-03-01T08:00:00Z");

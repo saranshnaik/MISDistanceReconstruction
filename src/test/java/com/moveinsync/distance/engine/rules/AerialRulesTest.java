@@ -27,8 +27,6 @@ class AerialRulesTest {
                 new GeoPoint(12.90 + metersNorth / METERS_PER_DEGREE, 77.60), PointSource.GPS_PING, null);
     }
 
-    // ---- SHORT_GAP_AERIAL ----
-
     @Test
     void shortGapAt69SecondsApplies() {
         Optional<Segment> segment = shortGap.apply(pointAt(0, 0), pointAt(69, 500));
@@ -70,8 +68,6 @@ class AerialRulesTest {
         assertTrue(shortGap.apply(pointAt(5, 0), pointAt(5, 100)).isEmpty());
     }
 
-    // ---- PARKED ----
-
     @Test
     void slowLongGapIsParked() {
         // 136 m in 100 s = 4.9 km/h
@@ -100,8 +96,6 @@ class AerialRulesTest {
         assertEquals(0, s.billedMm());
         assertEquals(SegmentRule.PARKED, s.rule());
     }
-
-    // ---- the two rules never fight over the same segment ----
 
     @Test
     void aSegmentIsNeverClaimedByBothRules() {

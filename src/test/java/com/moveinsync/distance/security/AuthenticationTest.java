@@ -72,8 +72,6 @@ class AuthenticationTest {
         return mvc.perform(request);
     }
 
-    // ---- logging in ----
-
     @Test
     void correctPasswordGivesABearerTokenAndTheRole() throws Exception {
         login("acme-admin", "demo-pass")
@@ -120,8 +118,6 @@ class AuthenticationTest {
         assertEquals("EMPLOYEE", globex.getClaimAsString("role"));
         assertEquals("E1", globex.getClaimAsString("employeeRef"));
     }
-
-    // ---- using it ----
 
     @Test
     void noTokenMeansUnauthorized() throws Exception {

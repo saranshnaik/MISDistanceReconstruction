@@ -4,9 +4,8 @@ import com.moveinsync.distance.engine.model.RuleConfig;
 import com.moveinsync.distance.engine.model.SegmentRule;
 
 /**
- * A long gap (70 s or more) where the cab moved slower than 5 km/h. It was most likely
- * parked or crawling, so the straight line is the honest answer and routing would only add
- * a detour that never happened.
+ * Gap of 70 s or more where the cab moved slower than 5 km/h: parked or crawling, so the
+ * straight line is the honest answer and routing would only invent a detour.
  */
 public class ParkedRule extends AerialSegmentRule {
 

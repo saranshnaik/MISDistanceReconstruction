@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Thin on purpose: translate HTTP into service calls. The rules live in the engine. */
+/** Thin on purpose: HTTP in, service call out. The rules live in the engine. */
 @RestController
 @RequestMapping("/api/trips")
 public class TripController {
@@ -27,7 +27,7 @@ public class TripController {
         this.tenants = tenants;
     }
 
-    /** Send a trip's evidence. Sending the same tripRef again returns the existing result. */
+    /** Send a trip's evidence. The same tripRef again returns the existing result. */
     @PostMapping
     public TripView submit(@Valid @RequestBody TripRequest request) {
         return trips.ingest(tenants.currentTenantId(), request.tripRef(), request.toEngine());
@@ -41,7 +41,7 @@ public class TripController {
         return trips.get(tenants.currentTenantId(), tripRef);
     }
 
-    /** The line-by-line explanation: every segment with the rule that produced its distance. */
+    /** Every segment with the rule that produced its distance. */
     @GetMapping("/{tripRef}/segments")
     public List<SegmentView> segments(@PathVariable String tripRef) {
         return trips.segments(tenants.currentTenantId(), tripRef);

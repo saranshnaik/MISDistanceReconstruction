@@ -17,16 +17,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerMapping;
 
 /**
- * Gives every request a trace id and writes one summary line when it ends.
+ * Gives every request a trace id and logs one summary line when it ends. The id is the
+ * caller's X-Request-Id if it looks sane, otherwise we make one. It goes into the logging
+ * context (so every log line of the request has it), the response header and error bodies,
+ * so "what happened to request abc123?" is one search. Runs before the security filters so
+ * even 401/403 requests get an id.
  *
- * The id comes from the caller's X-Request-Id header if it looks sane, otherwise we make one.
- * It goes into the logging context (so EVERY log line of this request carries it), into the
- * response header, and into error bodies, so "what happened to request abc123?" is one search.
- *
- * Runs before the security filters so even rejected (401/403) requests have an id.
- *
- * The summary line logs the route PATTERN (/api/trips/{tripRef}), not the real path, so trip
- * refs and anything else in the URL never reach the logs.
+ * The summary logs the route PATTERN (/api/trips/{tripRef}), not the real path, so trip refs
+ * never reach the logs.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -35,7 +33,7 @@ public class RequestTraceFilter extends OncePerRequestFilter {
     public static final String HEADER = "X-Request-Id";
     public static final String MDC_KEY = "traceId";
 
-    /** Letters, digits, dot, underscore, dash: nothing that could forge a log line or a header. */
+    /** Letters, digits, dot, underscore, dash: nothing that could forge a log line or header. */
     private static final Pattern ACCEPTABLE_ID = Pattern.compile("^[A-Za-z0-9._-]{8,64}$");
 
     private static final Logger log = LoggerFactory.getLogger(RequestTraceFilter.class);

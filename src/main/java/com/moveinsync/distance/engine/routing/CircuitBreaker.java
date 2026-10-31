@@ -5,15 +5,15 @@ import java.time.Duration;
 import java.time.Instant;
 
 /**
- * Stops us hammering a routing provider that is already down.
+ * Stops us hammering a provider that is already down.
  *
- *   CLOSED    normal. Failures are counted; a success resets the count.
- *   OPEN      too many failures in a row. Every request is refused straight away for a while.
- *   HALF_OPEN the wait is over. Exactly ONE request (the probe) is let through to test the
- *             provider. If it works we go back to CLOSED, if it fails we go back to OPEN.
+ * CLOSED: normal, failures are counted and a success resets the count.
+ * OPEN: too many failures in a row, everything is refused for a while.
+ * HALF_OPEN: wait is over, exactly one probe request goes through. If it works we close, if
+ * it fails we open again.
  *
- * The clock is passed in so tests can move time forward without sleeping.
- * Methods are synchronized: the state is tiny and this is not a hot path (one check per trip).
+ * Clock is injected so tests can move time without sleeping. Methods are synchronized; the
+ * state is tiny and there is one check per trip, so it is not a hot path.
  */
 public class CircuitBreaker {
 
@@ -35,7 +35,7 @@ public class CircuitBreaker {
         this.clock = clock;
     }
 
-    /** Ask before calling the provider. False means: do not even try. */
+    /** Ask before calling the provider. False means don't even try. */
     public synchronized boolean allowRequest() {
         if (state == State.CLOSED) {
             return true;
@@ -46,7 +46,7 @@ public class CircuitBreaker {
             }
             state = State.HALF_OPEN;
         }
-        // HALF_OPEN: only one probe at a time
+        // half-open: one probe at a time
         if (probeInFlight) {
             return false;
         }
@@ -55,9 +55,9 @@ public class CircuitBreaker {
     }
 
     /**
-     * True while the circuit is open and its wait is not over yet. Unlike allowRequest() this
-     * only looks: it never lets a probe through. Handy for background work that should simply
-     * stay quiet until the provider has had time to recover.
+     * True while the circuit is open and still waiting. Unlike allowRequest() it only looks and
+     * never lets a probe through, which is what the background job wants: stay quiet until the
+     * provider has had time to recover.
      */
     public synchronized boolean isRefusingRequests() {
         return state == State.OPEN && clock.instant().isBefore(openedAt.plus(openFor));
@@ -92,7 +92,7 @@ public class CircuitBreaker {
         return state;
     }
 
-    /** How often the circuit has tripped since start-up; handy as a metric. */
+    /** How often the circuit has tripped since start-up (used as a metric). */
     public synchronized long timesOpened() {
         return timesOpened;
     }

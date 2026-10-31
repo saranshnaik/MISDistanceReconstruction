@@ -9,7 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-/** A login account. Only the bcrypt hash of the password is ever stored. */
+/** A login account. Only the bcrypt hash of the password is stored. */
 @Entity
 @Table(name = "app_user")
 public class AppUserEntity {

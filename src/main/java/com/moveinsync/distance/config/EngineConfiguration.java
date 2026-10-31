@@ -14,9 +14,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * The only place that knows how the engine is put together. The engine itself is plain Java;
- * here we pick the thresholds, the routing provider and how it is wrapped:
- *
+ * The one place that knows how the engine is put together. The engine is plain Java; here
+ * we choose thresholds, the provider and the wrapping:
  *   engine -> circuit breaker -> cache + batching -> routing provider
  */
 @Configuration
@@ -32,7 +31,7 @@ public class EngineConfiguration {
         return RuleConfig.defaults();
     }
 
-    /** Stand-in for a real maps API. Replace this bean to plug in a real provider. */
+    /** Stand-in for a real maps API. Swap this bean to plug in a real provider. */
     @Bean
     public SimulatedRoutingProvider routingProvider(@Value("${routing.simulated.latency-ms:0}") long latencyMs) {
         return new SimulatedRoutingProvider(latencyMs);

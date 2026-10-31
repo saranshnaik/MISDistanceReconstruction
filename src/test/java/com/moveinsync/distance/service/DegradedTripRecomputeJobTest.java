@@ -47,7 +47,7 @@ class DegradedTripRecomputeJobTest {
         provider.setDown(false);
     }
 
-    /** A trip with a 22-minute hole, on a stretch of map used by no other test. */
+    /** A trip with a 22-minute hole, on a stretch of map no other test uses. */
     private TripView ingestDegradedTrip(String ref) {
         GeoPoint origin = new GeoPoint(12.9352, 77.6245 + (Math.abs(ref.hashCode()) % 20_000) * 0.002);
         List<Ping> pings = new ArrayList<>();

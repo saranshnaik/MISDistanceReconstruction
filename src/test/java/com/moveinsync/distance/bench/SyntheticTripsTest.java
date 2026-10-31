@@ -27,8 +27,6 @@ class SyntheticTripsTest {
         return new DistanceEngine(RuleConfig.defaults(), new CachingRouteResolver(new SimulatedRoutingProvider()));
     }
 
-    // ---- the generator itself ----
-
     @Test
     void sameSeedAndIndexGiveExactlyTheSameTrip() {
         assertEquals(generator.trip(7), new SyntheticTrips(42).trip(7));
@@ -84,8 +82,6 @@ class SyntheticTripsTest {
         }
         assertTrue(duplicateTimestamps && lowAccuracy && outsideWindow && bursts && unsorted);
     }
-
-    // ---- the engine on this data ----
 
     @Test
     void theEngineLandsNearTheTrueDistanceDespiteTheMessAndTheGaps() {

@@ -12,10 +12,9 @@ import java.util.HexFormat;
 import java.util.List;
 
 /**
- * A fingerprint of everything the engine reads. If the fingerprint and the rule version match
- * the last computation, running the engine again could only give the same answer, so we skip it.
- *
- * Pings and stops are sorted first, so the order they arrived in does not change the hash.
+ * Fingerprint of everything the engine reads. If it and the rule version match the last
+ * computation, running the engine again could only give the same answer, so we skip it.
+ * Pings and stops are sorted first so arrival order doesn't change the hash.
  */
 final class InputHasher {
 

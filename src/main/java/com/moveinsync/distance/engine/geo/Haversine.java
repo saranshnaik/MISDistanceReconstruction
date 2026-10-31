@@ -3,22 +3,20 @@ package com.moveinsync.distance.engine.geo;
 import com.moveinsync.distance.engine.model.GeoPoint;
 
 /**
- * Straight-line ("as the crow flies") distance on the earth's surface.
- *
- * Uses StrictMath instead of Math. Math is allowed to give slightly different last digits on
- * different CPUs/JVMs; StrictMath always gives the same bits. That matters because the same
- * input must always give exactly the same billed kilometres.
+ * Straight-line distance on the earth's surface.
+ * StrictMath instead of Math on purpose: Math may differ in the last digits between CPUs and
+ * JVMs, and the same input has to give the same billed km everywhere.
  */
 public final class Haversine {
 
-    /** Mean earth radius in metres (IUGG). */
+    /** Mean earth radius in metres. */
     private static final double EARTH_RADIUS_M = 6_371_008.8;
     private static final double DEG_TO_RAD = StrictMath.PI / 180.0;
 
     private Haversine() {
     }
 
-    /** Distance between two points in metres. */
+    /** Distance in metres. */
     public static double distanceM(GeoPoint a, GeoPoint b) {
         double lat1 = a.lat() * DEG_TO_RAD;
         double lat2 = b.lat() * DEG_TO_RAD;
@@ -33,7 +31,7 @@ public final class Haversine {
         return 2 * EARTH_RADIUS_M * StrictMath.asin(StrictMath.sqrt(h));
     }
 
-    /** Speed in km/h for covering {@code meters} in {@code seconds}. */
+    /** km/h for {@code meters} covered in {@code seconds}. */
     public static double speedKmh(double meters, double seconds) {
         return meters / seconds * 3.6;
     }
