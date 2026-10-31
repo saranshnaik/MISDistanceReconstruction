@@ -100,7 +100,7 @@ sequenceDiagram
     C->>A: POST /api/trips/T1/pings (late pings)
     A->>A: verify token, role OPERATOR/ADMIN, tenant from token
     A->>B: addLatePings(tenant, T1, pings)
-    B->>DB: SELECT trip FOR UPDATE  (row lock; other recomputes of T1 wait here)
+    B->>DB: SELECT trip FOR UPDATE  (row lock, other recomputes of T1 wait here)
     B->>DB: insert only the pings we have not seen
     B->>T: computeLocked(trip)
     T->>DB: load pings, stops, last computation
