@@ -6,9 +6,9 @@ Average pings per trip: 1,523. Seed 42, 40 shared routes.
 
 | scenario | wall time | trips/s | engine p50 | engine p99 | engine mean | peak heap |
 |---|---|---|---|---|---|---|
-| cache OFF, 1 thread | 9.9 s | 1,012 | 0.71 ms | 2.01 ms | 0.82 ms | 422 MB |
-| cache ON,  1 thread | 12.6 s | 797 | 0.97 ms | 2.36 ms | 1.10 ms | 423 MB |
-| cache ON, 16 threads | 1.5 s | 6,892 | 1.52 ms | 8.43 ms | 1.77 ms | 417 MB |
+| cache OFF, 1 thread | 11.3 s | 888 | 0.93 ms | 1.78 ms | 0.94 ms | 124 MB |
+| cache ON,  1 thread | 14.6 s | 684 | 1.29 ms | 2.14 ms | 1.28 ms | 119 MB |
+| cache ON, 16 threads | 1.5 s | 6,627 | 1.50 ms | 9.00 ms | 1.92 ms | 860 MB |
 
 | scenario | gaps needing a route | provider calls | cache hits | est. provider wait at 30 ms/call |
 |---|---|---|---|---|

@@ -24,7 +24,8 @@ docker compose up --build
 That starts the app and Postgres (Flyway creates the tables on first start). The first build is
 slow because it downloads the Java images and Maven dependencies.
 
-- health: http://localhost:8080/actuator/health
+- health: http://localhost:8080/actuator/health (about 15 s after start it says `UP`; before that it says
+  `OUT_OF_SERVICE` while the demo accounts are created)
 - port 8080 busy? `APP_PORT=18080 docker compose up --build`
 - before real use: set `JWT_SECRET` (32+ characters) and `SEED_DEMO_USERS=false`
 
@@ -35,7 +36,10 @@ Tests need no Docker (they use an in-memory H2 database):
 ./mvnw test -Pbenchmark      # also the 10,000-trip benchmark and the 10,000-trip failure test
 ```
 
-You need JDK 21 or newer. Ready-made requests are in [requests/demo.http](requests/demo.http).
+You need JDK 21 or newer. Ready-made requests are in [requests/demo.http](requests/demo.http), and
+`requests/demo.sh` walks through every main flow (including a live routing outage and recovery)
+against a running server and prints what happened. A talking-through script for a demo video is in
+[docs/DEMO.md](docs/DEMO.md).
 
 ### Try it by hand
 
@@ -141,15 +145,18 @@ Java 27 (HotSpot), 3.9 GB max heap.
 
 | scenario | wall time | trips/s | engine p50 | engine p99 | peak heap |
 |---|---|---|---|---|---|
-| cache off, 1 thread | 9.9 s | 1,012 | 0.71 ms | 2.01 ms | 422 MB |
-| cache on, 1 thread | 12.6 s | 797 | 0.97 ms | 2.36 ms | 423 MB |
-| cache on, 16 threads | 1.5 s | 6,892 | 1.52 ms | 8.43 ms | 417 MB |
+| cache off, 1 thread | 11.3 s | 888 | 0.93 ms | 1.78 ms | 124 MB |
+| cache on, 1 thread | 14.6 s | 684 | 1.29 ms | 2.14 ms | 119 MB |
+| cache on, 16 threads | 1.5 s | 6,627 | 1.50 ms | 9.00 ms | 860 MB |
 
 | | gaps needing a route | provider calls |
 |---|---|---|
 | before caching (one call per gap) | 46,741 | 46,741 |
 | after caching and batching (25 per call) | 46,741 | 108 (99.8% fewer) |
 
+- These are from the last run on the final code. Repeat runs move 10-15% (an earlier run gave 1,012 /
+  797 / 6,892 trips/s), and peak heap moves much more because it depends on when the garbage
+  collector happens to run (that earlier run showed about 420 MB for all three).
 - Total distance across all 10,000 trips is identical, to the millimetre, between the 1-thread and
   16-thread runs.
 - With the cache on, one thread is slightly *slower* than with it off: the cell bookkeeping costs
@@ -212,5 +219,5 @@ service/      stores trips, locks, hashes, calls the engine, billing, recovery j
 persistence/  JPA entities and repositories (Flyway migrations in resources/db/migration)
 web/          controllers, request validation, one error handler
 security/     tokens, roles, tenant from the token
-observability trace ids and metrics
+observability/ trace ids, structured logs and metrics
 ```

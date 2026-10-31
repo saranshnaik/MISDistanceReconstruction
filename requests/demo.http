@@ -1,0 +1,102 @@
+### The same flows as demo.sh, one request at a time.
+### Works with the "REST Client" extension in VS Code (and similar tools that support
+### named requests). Start the app first: docker compose up --build
+###
+### Demo accounts (password demo-pass): acme-admin, acme-operator, acme-employee,
+### globex-admin, globex-operator, globex-employee. Demo only.
+
+@host = http://localhost:8080
+
+### Health (no token needed)
+GET {{host}}/actuator/health
+
+### 1. Log in as an operator
+# @name loginOperator
+POST {{host}}/api/auth/token
+Content-Type: application/json
+
+{ "username": "acme-operator", "password": "demo-pass" }
+
+###
+@operator = {{loginOperator.response.body.accessToken}}
+
+### 2. Log in as an admin
+# @name loginAdmin
+POST {{host}}/api/auth/token
+Content-Type: application/json
+
+{ "username": "acme-admin", "password": "demo-pass" }
+
+###
+@admin = {{loginAdmin.response.body.accessToken}}
+
+### 3. Send a trip with a 22-minute GPS hole and a drop-off inside it
+### (change "tripRef" in sample-trip.json to send it again as a new trip)
+POST {{host}}/api/trips
+Authorization: Bearer {{operator}}
+Content-Type: application/json
+
+< ./sample-trip.json
+
+### 4. Read it back
+GET {{host}}/api/trips/DEMO-1
+Authorization: Bearer {{operator}}
+
+### 5. Why is every kilometre there? One line per segment, with the rule that priced it
+GET {{host}}/api/trips/DEMO-1/segments
+Authorization: Bearer {{operator}}
+
+### 6. Close the invoice (admin only; an estimated trip is refused with 409)
+POST {{host}}/api/trips/DEMO-1/bill
+Authorization: Bearer {{admin}}
+
+### 7. Late pings after billing: shows up as a signed adjustment, the invoice stays as it was
+POST {{host}}/api/trips/DEMO-1/pings
+Authorization: Bearer {{operator}}
+Content-Type: application/json
+
+< ./late-pings.json
+
+### 8. The adjustments (admin only)
+GET {{host}}/api/trips/DEMO-1/adjustments
+Authorization: Bearer {{admin}}
+
+### 9. FAILURE DEMO: switch the routing provider off
+POST {{host}}/api/admin/routing/outage
+Authorization: Bearer {{admin}}
+Content-Type: application/json
+
+{ "down": true }
+
+### 10. Send a trip that needs routing: it comes back DEGRADED (estimate), and billing it gives 409
+POST {{host}}/api/trips
+Authorization: Bearer {{operator}}
+Content-Type: application/json
+
+< ./sample-trip-outage.json
+
+### 11. Provider back
+POST {{host}}/api/admin/routing/outage
+Authorization: Bearer {{admin}}
+Content-Type: application/json
+
+{ "down": false }
+
+### 12. Recompute (the background job would also do this within 30 seconds)
+POST {{host}}/api/trips/DEMO-2/recompute
+Authorization: Bearer {{operator}}
+
+### 13. Another tenant cannot see it: 404, same as a trip that does not exist
+# @name loginOther
+POST {{host}}/api/auth/token
+Content-Type: application/json
+
+{ "username": "globex-operator", "password": "demo-pass" }
+
+###
+GET {{host}}/api/trips/DEMO-1
+Authorization: Bearer {{loginOther.response.body.accessToken}}
+
+### 14. Metrics (admin only)
+GET {{host}}/actuator/prometheus
+Authorization: Bearer {{admin}}
