@@ -38,8 +38,7 @@ Tests need no Docker (they use an in-memory H2 database):
 
 You need JDK 21 or newer. Ready-made requests are in [requests/demo.http](requests/demo.http), and
 `requests/demo.sh` walks through every main flow (including a live routing outage and recovery)
-against a running server and prints what happened. A talking-through script for a demo video is in
-[docs/DEMO.md](docs/DEMO.md).
+against a running server and prints what happened.
 
 ### Try it by hand
 
